@@ -15,4 +15,4 @@ An overview of the purpose of different scripts in this repository.
 | File Name     | Description |
 | ------------- | ------------- |
 | 01_figure_01.R  | Code for plots in figure 1  |
-| 04_figure_04.Rmd| Code for plots in figure 4  |
+| 04_figure4_suppFig6.Rmd| Code for plots in figure 4 and supplimentary figure 6 |
