@@ -1,0 +1,267 @@
+---
+title: "INDEPTH_DLBCL_Analysis"
+author: "YYY"
+date: "2024-08-20"
+output: html_document
+---
+
+Load packages
+```{r, include = FALSE}
+### installing seurat V4.4.0 because V5 is buggy for cellcyclescoring
+# install.packages("remotes")
+# remotes::install_github("satijalab/seurat", ref = "v4.4.0")
+library(Seurat)
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(ggrepel)
+library(circlize)
+library(ComplexHeatmap)
+library(GSVA)
+library(msigdbr)
+library(scales)
+library(pracma)
+library(qs)
+```
+
+
+
+PART 1: data formatting
+a) Import RNA data
+```{r}
+# Import data + some re-naming
+Normalized_counts = qread(".../DLBCL_MergeM1_M2_Seurat.qs") 
+
+Merged_counts = Normalized_counts[["RNA"]]@data %>%
+  as.matrix() %>% t() %>% as.data.frame() %>%
+  rownames_to_column(var = "Region") %>% separate(Region, sep = " \\| ", into = c("Tissue", "Region", "CellType")) %>%
+  mutate(Tissue = case_when(Tissue == "20240420_FINAL-DLBCL-TMA_Rochester" ~ "Rochester",
+                            Tissue == "20240420_Final_DLBCL_TMA_DFCI" ~ "DFCI"))
+
+head(Merged_counts)
+head(Merged_counts_Macro)
+```
+
+b) Import protein data and get cell proportion
+```{r}
+selected_cores = c("Rochester_4", "Rochester_6", "Rochester_7", "Rochester_9", "Rochester_11", "Rochester_12", "Rochester_13", "Rochester_14",
+                   "Rochester_15", "Rochester_16", "Rochester_17", "Rochester_18", "Rochester_19", "Rochester_21", "Rochester_23", "Rochester_25",
+                   "DFCI_2.2", "DFCI_3.2", "DFCI_4.1", "DFCI_7.1", "DFCI_8.1", "DFCI_12.1", "DFCI_13.2", "DFCI_14.1", "DFCI_15.2", "DFCI_17.1",
+                   "DFCI_18.2", "DFCI_19.2", "DFCI_22.2", "DFCI_23.2")
+
+# Read annotation file
+ProteinData = read.csv(".../ROI_with_full_marker_no_0_syto13_v2.csv") %>%
+  dplyr::filter(coreName %in% selected_cores)
+
+ProteinData_LUT = read.csv(".../ProteinData_LUT.csv") %>%
+  dplyr::filter(coreName %in% selected_cores)
+
+# Merge mem/naive into T, tumor subpopulations together, and also neutrophils into other
+ProteinData_tidy = ProteinData %>%
+  mutate(Annotation = case_when(Annotation %in% c("CD8mem", "CD8naive") ~ "CD8",
+                                Annotation %in% c("CD4mem", "CD4naive") ~ "CD4",
+                                Annotation == "Neutrophil" ~ "Other",
+                                str_detect(Annotation, "Tumor") ~ "Tumor",
+                                TRUE ~ Annotation))
+
+# Get cell density for each cell type
+ROI_CellDensity = ProteinData_tidy %>%
+  group_by(coreName, Annotation) %>%
+  summarize(count = n(), .groups = "drop") %>%
+  group_by(coreName) %>%
+  mutate(coreCount = sum(count)) %>%
+  ungroup() %>%
+  mutate(countPct = 100 * count / coreCount) %>%
+  left_join(ProteinData_LUT, by = c("coreName"))
+
+head(ProteinData_tidy)
+head(ProteinData_LUT)
+head(ROI_CellDensity)
+```
+
+c) Incorporate EBV information into RNA data
+```{r}
+Merged_counts_updated = Merged_counts %>%
+  mutate(Tissue = paste0(Tissue, "_", Region)) %>%
+  mutate(Tissue = case_when(
+    str_ends(Tissue, "a") ~ str_replace(Tissue, "a$", ".1"),
+    str_ends(Tissue, "b") ~ str_replace(Tissue, "b$", ".2"),
+    TRUE ~ Tissue
+    )) %>%
+  left_join(ProteinData_LUT, by = c("Tissue" = "coreName")) %>%
+  dplyr::select(-c(Region))
+
+Merged_counts_updated_Macro = Merged_counts_Macro %>%
+  mutate(Tissue = paste0(Tissue, "_", Region)) %>%
+  mutate(Tissue = case_when(
+    str_ends(Tissue, "a") ~ str_replace(Tissue, "a$", ".1"),
+    str_ends(Tissue, "b") ~ str_replace(Tissue, "b$", ".2"),
+    TRUE ~ Tissue
+    )) %>%
+  left_join(ProteinData_LUT, by = c("Tissue" = "coreName")) %>%
+  dplyr::select(-c(Region))
+
+head(Merged_counts_updated)
+head(Merged_counts_updated_Macro)
+```
+
+
+
+PART 2: Data analysis related to figures
+Figure 4G: T-cell exhaustion
+```{r}
+# Pull out T-cell RNA signatures
+ROI_analysis_data_T = Merged_counts_updated %>%
+  dplyr::filter(CellType %in% c("CD8T", "CD4T")) %>%
+  mutate(Tissue = paste(Tissue, CellType, ebv_status, sep = "~")) %>%
+  dplyr::select(-c(CellType, ebv_status)) %>%
+  column_to_rownames(var = "Tissue") %>%
+  t()
+
+# Gene exhaustion gene set groups
+GeneSet_list_GSVA_group = data.frame(gene_symbol = c("CTLA4", "HAVCR2", "LAG3", "PDCD1", "BTLA", "TIGIT", "CD160", "CD244", "ENTPD1", "VSIR"), gs_name = "Exhaustion")
+
+# Brief reformat
+pathways_GSVA = split(x = GeneSet_list_GSVA_group$gene_symbol,
+                      f = GeneSet_list_GSVA_group$gs_name)
+
+gsvaPar = gsvaParam(ROI_analysis_data_T, pathways_GSVA)
+GSVA_Teff_ex = gsva(gsvaPar, verbose=FALSE) %>%
+  t()%>%
+  as.data.frame()
+
+GSVA_Teff_ex = GSVA_Teff_ex %>%
+  as.data.frame() %>% # make into dataframe for easier visualization
+  rownames_to_column(var = "Region")
+
+head(GSVA_Teff_ex)
+
+# Make plot
+#pdf(file = ".../Fig4G.pdf")
+GSVA_Teff_ex %>%
+  pivot_longer(cols = -c("Region"),
+               names_to = ("pathway"),
+               values_to = ("Score")) %>%
+  separate(Region, sep = "~", into = c("ROInum", "CellType", "ebv_status")) %>%
+  ggplot(aes(x = factor(ebv_status, levels = c("Positive", "Negative")),
+            y = Score,
+            fill = ebv_status)) +
+  geom_violin(width = 0.5,
+              trim = FALSE) +
+  geom_boxplot(width = 0.1) +
+  geom_point(position = position_jitter(width = 0.02),
+             size = 0.2) +
+  scale_fill_manual(values = c("Positive" = "#C46938", "Negative" = "#449877")) +
+  facet_wrap(~pathway + CellType) +
+  #facet_wrap(~pathway) +
+  theme_bw() +
+  theme(#legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  stat_compare_means(comparisons = list(c("Positive", "Negative")),
+                     tip.length = 0,
+                     method = "wilcox.test",
+                     method.args = list(alternative = "greater"),
+                     label = "p.format",
+                     paired = FALSE,
+                     label.y = 0.26
+                     )
+#dev.off()
+```
+
+
+
+Figure 4J left
+```{r}
+test = ROI_CellDensity %>%
+  dplyr::filter(str_detect(Annotation, "M1|M2")) %>%
+  group_by(coreName) %>%
+  mutate(coreCount = sum(count)) %>%
+  ungroup() %>%
+  mutate(countPct = count/coreCount) %>%
+  dplyr::filter(Annotation == "M2")
+
+# Since x-axis is different, we need to first define a common x-axis range
+x_common = seq(min(test$countPct),
+               max(test$countPct),
+               length.out = 10000)
+
+# Compute densities for each group using the x_common to align x-axis
+pos = density(test %>%
+              filter(ebv_status == "Positive") %>%
+              pull(countPct), n = 10000, from = min(x_common), to = max(x_common))
+
+neg = density(test %>%
+              filter(ebv_status == "Negative") %>%
+              pull(countPct), n = 10000, from = min(x_common), to = max(x_common))
+
+# Find intersection point
+df_density = data.frame(x = pos$x,
+                        y_pos = pos$y,
+                        y_neg = neg$y)
+
+intersection = df_density %>%
+  dplyr::filter(x > 0.5) %>%
+  mutate(difference = abs(y_pos - y_neg)) %>%
+  dplyr::filter(difference == min(difference)) %>%
+  pull(x)
+
+print(intersection)
+
+### visualize density
+#pdf(file = ".../Fig4J_left.pdf")
+test %>%
+  #dplyr::filter(Annotation == "M1") %>%
+  ggplot(aes(x = countPct, color= ebv_status)) +
+  geom_density() +
+  scale_color_manual(values = c("Positive" = "#C46938", "Negative" = "#449877")) +
+  geom_vline(xintercept = intersection, linetype = "dashed", color = "black") +
+  theme_minimal()
+#dev.off()
+
+test1 = test %>% dplyr::filter(countPct > intersection) %>% pull(coreName)
+test2 = test %>% dplyr::filter(countPct < intersection) %>% pull(coreName)
+```
+
+
+
+Fig 4J right
+```{r}
+Mac_CS_Tcell_fxn = GSVA_Teff_ex %>%
+  separate(Region, sep = "~", into = c("Tissue", "T_celltype", "ebv_status")) %>%
+  left_join(Mac_CS_v2, by = c("Tissue", "ebv_status"))
+
+# Sorting and scaling: uncomment for median or kmeans
+Mac_CS_highlow = Mac_CS_Tcell_fxn %>%
+  mutate(HighScore = case_when(Tissue %in% test1 ~ "M2-enriched",
+                               Tissue %in% test2 ~ "M1-enriched")) 
+
+### plot
+#pdf(file = ".../Fig4J_right.pdf")
+Mac_CS_highlow %>%
+  ggplot(aes(x = factor(HighScore, levels = c("M2-enriched", "M1-enriched")),
+             y = `Exhaustion`,
+             fill = HighScore)) +
+  geom_violin(width = 0.5,
+              trim = FALSE) +
+  geom_boxplot(width = 0.1) +
+  geom_point(position = position_jitter(width = 0.02, height = 0),
+             size = 0.2) +
+  facet_wrap(~ T_celltype) +
+  theme_bw() +
+  theme(#legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  stat_compare_means(comparisons = list(c("M2-enriched", "M1-enriched")),
+                     tip.length = 0,
+                     method = "wilcox.test",
+                     method.args = list(alternative = "greater"),
+                     label = "p.format",
+                     paired = FALSE
+                     )
+#dev.off()
+```
+
+
