@@ -16,6 +16,7 @@ An overview of the purpose of different scripts in this repository.
 | ------------- | ------------- |
 | 01_figure1.R  | Code for plots in figure 1  |
 | 02_figure2.Rmd | Code for plots and analyses in figure 2 |
+| 02_figure2E_supp2EFG.Rmd | Code for plots and analyses in figure 2E and supplementary figure 2EFG |
 | 02_figure2F_cNMF.ipynb | Code for running cNMF in figure 2F |
 | 04_figure4_4G&J.Rmd | Code for plots in figure 4G and 4J |
 | 04_figure4_suppFig6.Rmd | Code for plots in figure 4 and supplimentary figure 6 |
