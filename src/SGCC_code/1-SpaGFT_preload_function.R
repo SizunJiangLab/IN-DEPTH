@@ -42,7 +42,6 @@ packages <- c(
   patchwork = "CRAN", 
   ggpubr = "CRAN", 
   egg = "CRAN",
-  ImpulseDE2 = "YosefLab/ImpulseDE2", 
   kneedle = "etam4260/kneedle", 
   gasper = "fabnavarro/gasper"
 )
@@ -61,7 +60,6 @@ library(kneedle)
 library(gasper)
 library(Matrix)
 library(patchwork)
-library(ImpulseDE2)
 library(ggpubr)
 library(egg)
 # calculate laplacian
