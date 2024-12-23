@@ -1,0 +1,92 @@
+---
+title: "GeoMX batch effect"
+date: "`r Sys.Date()`"
+author: "Yuzhou"
+output: 
+  rmdformats::readthedown
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# set up environment (Run whole chunk)
+
+```{r setup-packages, message=FALSE, warning=FALSE}
+# Load the packages
+library(qs)
+library(standR)
+library(SpatialExperiment)
+library(limma)
+library(scater)
+library(ExperimentHub)
+library(ggalluvial)
+require(FNN)
+library(kBET)
+library(Seurat)
+library(ggplot2)
+library(dplyr) 
+library(tidyr)
+library(cowplot)
+library(readxl)
+library(utils)
+library(reshape2)
+library(SeuratObject)
+library(Seurat)
+library(knitr)
+```
+
+# read and save L24
+
+```{r}
+wdpath <- c("./data/Tonsil_run/")
+# read cell data
+spe <- qread(file.path(wdpath,"GeoMX_L24_L25_batchcorrection/L24_spe_raw_counts.qs"))
+```
+
+```{r}
+unwantedVariable <- c("ROILabel")
+# define wanted factor
+WantedVariable <- c("SegmentLabel")
+L24_para_results <- read.csv(file.path(wdpath,"GeoMX_L24_L25_batchcorrection","L24_para.csv"))
+L24_para_results <- L24_para_results[order(L24_para_results$overall_rank),]
+# for using CPM, please use the following tmp_spe <- scater::logNormCounts(spe)
+# tmp_spe <- geomxNorm(spe, method = "upperquartile")
+tmp_spe <- scater::logNormCounts(spe)
+# top_n = numebr of negative control gene
+tmp_spe <- findNCGs(tmp_spe, batch_name = unwantedVariable, top_n = 3000)
+# k is previous tuned parameter
+tmp_spe <- geomxBatchCorrection(tmp_spe, factors = WantedVariable,
+                                NCGs = metadata(tmp_spe)$NCGs, k = 5)
+dec <-scran:: modelGeneVar(tmp_spe)
+top_genes <- scran::getTopHVGs(dec, n = 1000)
+# exp_mat is the post-correct expression matrix
+exp_mat <- assay(tmp_spe,i = 2)
+# write the expression matrix
+Save.name_mat <- file.path(wdpath,"GeoMX_L24_L25_batchcorrection",paste0(L24_para_results$X[1],"_PostCorrectExp_L24.csv"))
+# write.csv(exp_mat,file = Save.name_mat,quote = F)
+```
+
+# read and save L25
+```{r}
+# read cell data
+spe <- qread(file.path(wdpath,"GeoMX_L24_L25_batchcorrection/L25_spe_raw_counts.qs"))
+
+L25_para_results <- read.csv(file.path(wdpath,"GeoMX_L24_L25_batchcorrection","L25_para.csv"))
+L25_para_results <- L25_para_results[order(L25_para_results$overall_rank),]
+# for using CPM, please use the following tmp_spe <- scater::logNormCounts(spe)
+# tmp_spe <- geomxNorm(spe, method = "upperquartile")
+tmp_spe <- scater::logNormCounts(spe)
+# top_n = numebr of negative control gene
+tmp_spe <- findNCGs(tmp_spe, batch_name = unwantedVariable, top_n = 2500)
+# k is previous tuned parameter
+tmp_spe <- geomxBatchCorrection(tmp_spe, factors = WantedVariable,
+                                NCGs = metadata(tmp_spe)$NCGs, k = 5)
+dec <-scran:: modelGeneVar(tmp_spe)
+top_genes <- scran::getTopHVGs(dec, n = 1000)
+# exp_mat is the post-correct expression matrix
+exp_mat <- assay(tmp_spe,i = 2)
+# write the expression matrix
+Save.name_mat <- file.path(wdpath,"GeoMX_L24_L25_batchcorrection",paste0(L25_para_results$X[1],"_PostCorrectExp_L25.csv"))
+# write.csv(exp_mat,file = Save.name_mat,quote = F)
+```
