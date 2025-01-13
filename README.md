@@ -136,7 +136,7 @@ install_and_load(packages)
   - `sensitivity`: Sensitivity parameter for knee point detection.
 
 #### 7. `Cal_GCC`
-- **Purpose:** Calculates the Graph Cross-Correlation between two signals using a subset of low-frequency components.
+- **Purpose:** Calculates the Spectral Graph Cross-Correlation between two signals using a subset of low-frequency components.
 - **Parameters:**
   - `data.in`: Input data frame.
   - `knee`: Knee point for low-frequency cutoff.
