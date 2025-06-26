@@ -116,8 +116,8 @@ ggsave(
 # ref_spectrum <- eigvals_matrix[ref_k, ]
 # cor_to_ref <- apply(eigvals_matrix, 1, function(x) cor(x, ref_spectrum))
 # 
-# # Extract numeric k for plotting
-# k_numeric <- as.numeric(sub("k_", "", rownames(eigvals_matrix)))
+# Extract numeric k for plotting
+k_numeric <- as.numeric(sub("k_", "", rownames(eigvals_matrix)))
 # 
 # plot(k_numeric, cor_to_ref, type = "b", pch = 16,
 #      xlab = "k", ylab = "Correlation to reference (k=600)",
@@ -225,26 +225,26 @@ ggsave(
 
 
 
-# sd_by_rank_df <- tibble(
-#   EigenvalueRank = seq_along(sd_low),
-#   `k < 400` = sd_low,
-#   `k ≥ 400` = sd_high,
-#   `k < 250` = sd_low1,
-#   `k ≥ 250` = sd_high1
-# ) %>%
-#   pivot_longer(-EigenvalueRank, names_to = "Group", values_to = "SD")
-# 
-# ggplot(sd_by_rank_df, aes(x = EigenvalueRank, y = SD, color = Group)) +
-#   geom_line(size = 1.2) +
-#   geom_point(size = 1.8) +
-#   scale_color_manual(values = c("orange", "skyblue", "orange", "skyblue")) +
-#   labs(
-#     title = "SD by Eigenvalue Rank",
-#     subtitle = "Lines: Each k group",
-#     x = "Eigenvalue Rank",
-#     y = "Standard Deviation"
-#   ) +
-#   theme_minimal(base_size = 15)
+sd_by_rank_df <- tibble(
+  EigenvalueRank = seq_along(sd_low),
+  `k < 400` = sd_low,
+  `k ≥ 400` = sd_high,
+  `k < 250` = sd_low1,
+  `k ≥ 250` = sd_high1
+) %>%
+  pivot_longer(-EigenvalueRank, names_to = "Group", values_to = "SD")
+
+ggplot(sd_by_rank_df, aes(x = EigenvalueRank, y = SD, color = Group)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 1.8) +
+  scale_color_manual(values = c("orange", "skyblue", "gold", "dodgerblue")) +
+  labs(
+    title = "SD by Eigenvalue Rank",
+    subtitle = "Lines: Each k group",
+    x = "Eigenvalue Rank",
+    y = "Standard Deviation"
+  ) +
+  theme_minimal(base_size = 15)
 
 
 # library(ggridges)
