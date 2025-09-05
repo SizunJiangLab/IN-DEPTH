@@ -4,7 +4,7 @@ remote_theme: "mmistakes/minimal-mistakes@4.24.0"
 minimal_mistakes_skin: default # color themes, e.g. air, contrast, dark, mint, sunrise, etc
 
 # Deployment
-url: "https://SizunJiangLab.github.io"
+url: "https://rongtingting.github.io"
 baseurl: "/IN-DEPTH"
 
 sass:
