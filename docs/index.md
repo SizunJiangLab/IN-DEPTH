@@ -14,24 +14,24 @@ header:
   #   - label: "ℹ️ About"
   #     url: "/about/"
 feature_row:
-  - image_path: /assets/images/Protocols.png
-    title: "Protocols"
+  - title: "Protocols"
     excerpt: "Step-by-step laboratory protocols."
     url: "/protocols/"
     btn_label: "View Protocols"
     btn_class: "btn--primary"
-  - image_path: /your-project/assets/images/notebooks.png
-    title: "Notebooks"
+    # image_path: /assets/images/lab-logo.png
+  - title: "Notebooks"
     excerpt: "Explore our Jupyter notebooks and analyses."
     url: "/notebooks/"
     btn_label: "See Notebooks"
     btn_class: "btn--primary"
-  - image_path: /assets/images/about.png
-    title: "About the Lab"
+    # image_path: /assets/images/lab-logo.png
+  - title: "About the Lab"
     excerpt: "More about our team and research focus."
     url: "https://sizunjianglab.com/"
     btn_label: "Read More"
     btn_class: "btn--primary"
+    # image_path: /assets/images/lab-logo.png
 ---
 
 
