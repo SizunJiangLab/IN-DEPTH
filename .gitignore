@@ -39,8 +39,8 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-# pkgdown site
-docs/
+# # pkgdown site
+# docs/
 
 # translation temp files
 po/*~
@@ -48,3 +48,24 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 .DS_Store
+
+# # Jekyll (docs site)
+# docs/_site/
+# docs/.jekyll-cache/
+# docs/.sass-cache/
+# docs/.jekyll-metadata
+# docs/vendor/
+# docs/.bundle/
+
+# Bundler config
+.bundle/
+vendor/
+
+# Jekyll build output
+_site/
+.sass-cache/
+.jekyll-cache/
+
+# OS artifacts
+.DS_Store
+Thumbs.db

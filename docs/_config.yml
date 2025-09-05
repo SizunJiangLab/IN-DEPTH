@@ -1,0 +1,82 @@
+title: "IN-DEPTH"
+description: "Documentation, Protocols, and Notebooks"
+remote_theme: "mmistakes/minimal-mistakes@4.24.0"
+minimal_mistakes_skin: default # color themes, e.g. air, contrast, dark, mint, sunrise, etc
+
+# Deployment
+url: "https://SizunJiangLab.github.io"
+baseurl: "/IN-DEPTH/docs"
+
+sass:
+  style: compressed
+
+include: ["_pages"]
+
+
+# Branding
+logo: "/assets/images/lab-logo.png"
+logo_url: "https://sizunjianglab.com/"
+header:
+  overlay_image: /assets/images/banner.jpg
+  overlay_filter: 0.5
+  caption: "Jiang Lab: Innovative Research"
+
+footer:
+  links: true    # disable if you’re using footer.yml
+  copyright: "© 2025 JIANG LAB IN-DEPTH · Built with Jekyll & Minimal Mistakes"
+# use custom footer
+
+# Author / Lab details (helps SEO)
+author:
+  name: "Jiang Lab"
+  avatar: "/assets/images/lab-logo.png"
+  bio: "Innovative spatial-omics and systems immunology."
+  links:
+    - label: "Website"
+      icon: "fas fa-fw fa-globe"
+      url: "https://sizunjianglab.com/"
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/SizunJiangLab"
+
+
+# Collections
+collections:
+  protocols:
+    output: true
+    permalink: /protocols/:path/
+  # notebooks:
+  #   output: true
+  #   permalink: /notebooks/:path/
+
+defaults:
+  - scope:
+      path: ""
+      type: pages
+    values:
+      nav: main
+  
+  - scope:
+      path: ""
+      type: "protocols"
+    values:
+      layout: single
+      classes: wide
+      sidebar:
+        nav: "protocols"
+  
+  # - scope:
+  #     path: ""
+  #     type: "notebooks"
+  #   values:
+  #     layout: single
+  #     sidebar:
+  #       nav: "notebooks"
+
+plugins:
+  - jekyll-paginate
+  - jekyll-sitemap
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-include-cache
+  - jekyll-remote-theme

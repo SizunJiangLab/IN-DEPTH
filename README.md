@@ -1,6 +1,6 @@
 # Same-Slide Spatial Multi-Omics Integration Reveals Tumor Virus-Linked Spatial Reorganization of the Tumor Microenvironment
 
-![overview](https://github.com/SizunJiangLab/IN-DEPTH/blob/main/doc/overview.png)
+![overview](https://github.com/SizunJiangLab/IN-DEPTH/blob/main/docs/assets/images/overview.png)
 
 ## Abstract
 

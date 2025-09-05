@@ -1,0 +1,10 @@
+.page__footer {
+  /* height: 3rem; */
+  /* display: flex; */
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 0.85rem; /* optional*/
+  /* background: #999 !important; */
+  /* color: #eee !important; */
+}
+/* .page__footer .wrapper { max-width: 100%; }  */

@@ -1,0 +1,7 @@
+entries:
+  - title: "Protocols"
+    children:
+      - title: "All Protocols"
+        url: /protocols/
+      - title: "Sample Prep"
+        url: /protocols/dna-isolation/

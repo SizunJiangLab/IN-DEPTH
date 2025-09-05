@@ -1,0 +1,13 @@
+main:
+  - title: "Home"
+    url: /
+  - title: "Protocols"
+    url: /protocols/
+  - title: "Data"
+    url: /demo/
+  - title: "Tutorials"
+    url: /tutorials/
+  - title: '<i class="fab fa-github"></i>'
+    url: "https://github.com/SizunJiangLab/IN-DEPTH"
+  - title: '<i class="fab fa-twitter"></i>'
+    url: "https://x.com/SizunJ"

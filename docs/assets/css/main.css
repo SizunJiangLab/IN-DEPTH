@@ -1,0 +1,8 @@
+---
+---
+
+/* @import "minimal-mistakes/skins/{{ site.minimal_mistakes_skin }}"; // theme skin
+@import "minimal-mistakes"; // main theme styles */
+
+/* Add your overrides */
+@import "custom";
