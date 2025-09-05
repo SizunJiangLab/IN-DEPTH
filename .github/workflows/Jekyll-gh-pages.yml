@@ -31,6 +31,24 @@ jobs:
         with:
           ruby-version: '3.1'
           bundler-cache: true
+      
+      # Generate dynamic Jekyll config based on repository owner to set the correct URL and baseurl for the site.
+      # This is important for ensuring that the site works correctly when deployed to GitHub Pages.
+      # The dynamic config file is created at docs/_config_dynamic.yml and will be merged with the 
+      # existing _config.yml during the build process.
+  
+      - name: Generate dynamic Jekyll config
+        run: |
+          if [ "${{ github.repository_owner }}" = "rongtingting" ]; then
+            echo "url: https://rongtingting.github.io" > docs/_config_dynamic.yml
+            echo "baseurl: /IN-DEPTH" >> docs/_config_dynamic.yml
+          else
+            echo "url: https://${{ github.repository_owner }}.github.io" > docs/_config_dynamic.yml
+            echo "baseurl: /IN-DEPTH" >> docs/_config_dynamic.yml
+          fi
+
+          echo "=== Dynamic config docs/_config_dynamic.yml ==="
+          cat docs/_config_dynamic.yml
 
       - name: Install dependencies and build
         working-directory: ./docs
