@@ -37,6 +37,11 @@ jobs:
         run: |
           bundle install
           bundle exec jekyll build --trace --verbose -d ../_site
+      
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
   
   deploy:
     needs: build
