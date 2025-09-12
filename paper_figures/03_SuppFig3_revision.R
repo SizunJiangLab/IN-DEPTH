@@ -96,8 +96,15 @@ correlation_heatmap <-
     legend.text = element_text(size = 10)
   )
 
+# ggsave(
+#   filename = "Pairwise_Correlation_LowerTri_ggplot2.png",
+#   plot = correlation_heatmap,
+#   width = 7,
+#   height = 6
+# )
+
 ggsave(
-  filename = "Pairwise_Correlation_LowerTri_ggplot2.png",
+  filename = "Pairwise_Correlation_LowerTri_ggplot2.pdf",
   plot = correlation_heatmap,
   width = 7,
   height = 6
@@ -197,8 +204,15 @@ sd_boxplot <- ggplot(sd_df, aes(x = Group, y = SD, fill = Group)) +
           legend.position.inside = c(0.75, 0.65), # (x, y) in [0, 1] relative to plot area
           legend.justification = c("left", "bottom"))
 
+# ggsave(
+#   filename = "Distribution_of_SD_across_Eigenvalue_Ranks.png",
+#   plot = sd_boxplot,
+#   width = 7,
+#   height = 6
+# )
+
 ggsave(
-  filename = "Distribution_of_SD_across_Eigenvalue_Ranks.png",
+  filename = "Distribution_of_SD_across_Eigenvalue_Ranks.pdf",
   plot = sd_boxplot,
   width = 7,
   height = 6
@@ -234,7 +248,7 @@ sd_by_rank_df <- tibble(
 ) %>%
   pivot_longer(-EigenvalueRank, names_to = "Group", values_to = "SD")
 
-ggplot(sd_by_rank_df, aes(x = EigenvalueRank, y = SD, color = Group)) +
+sd_plot <- ggplot(sd_by_rank_df, aes(x = EigenvalueRank, y = SD, color = Group)) +
   geom_line(size = 1.2) +
   geom_point(size = 1.8) +
   scale_color_manual(values = c("orange", "skyblue", "gold", "dodgerblue")) +
@@ -245,6 +259,13 @@ ggplot(sd_by_rank_df, aes(x = EigenvalueRank, y = SD, color = Group)) +
     y = "Standard Deviation"
   ) +
   theme_minimal(base_size = 15)
+
+ggsave(
+  filename = "Distribution_of_SD_across_Eigenvalue_Ranks_line.pdf",
+  plot = sd_plot,
+  width = 7,
+  height = 6
+)
 
 
 # library(ggridges)
