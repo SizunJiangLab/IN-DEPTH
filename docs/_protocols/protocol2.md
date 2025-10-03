@@ -1,6 +1,18 @@
 ---
-title: "Protocol2"
+title: "CODEX_GeoMx"
+sidebar:
+  nav: "protocols"
 ---
 
-# Abstract
-A reproducible method for …
+
+This protocol outlines the required reagents and step-by-step procedures for performing CODEX imaging followed by GeoMx spatial
+transcriptomics on the same tissue section. This was originally described in the publication “Same-Slide Spatial Multi-Omics Integration
+Reveals Tumor Virus-Linked Spatial Reorganization of the Tumor Microenvironment”, with modifications adapted from protocols provided
+by Akoya Biosciences (PhenoCycler Fusion) and Bruker Corporation (NanoString, GeoMx). Please cite when using this protocol.
+
+## CODEX_GeoMx_Protocol
+
+<iframe 
+  src="{{ '/assets/protocols/CODEX_GeoMx_protocol_v1.pdf' | relative_url }}" 
+  style="width:100%; height:80vh; border:1px solid #ccc;">
+</iframe>
