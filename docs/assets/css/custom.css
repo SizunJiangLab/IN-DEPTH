@@ -8,3 +8,31 @@
   /* color: #eee !important; */
 }
 /* .page__footer .wrapper { max-width: 100%; }  */
+
+/* Increase max width for wide pages */
+.page__content.wide,
+.page__content--wide {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding-right: 2rem;
+  padding-left: 2rem;
+}
+
+/* Widen code blocks and prevent wrapping */
+.page__content pre,
+.page__content code,
+.highlight {
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Make tables scrollable horizontally if they overflow */
+.page__content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+  width: 100%;
+  white-space: nowrap;
+}
