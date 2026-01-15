@@ -39,6 +39,11 @@ author:
       icon: "fab fa-fw fa-github"
       url: "https://github.com/SizunJiangLab"
 
+analytics:
+  provider: "google-gtag"
+  google:
+    tracking_id: "G-C19LBMLKBZ"
+    anonymize_ip: true
 
 # Collections
 collections:
