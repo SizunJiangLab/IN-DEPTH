@@ -34,7 +34,6 @@ env/
 
 # Jupyter
 .ipynb_checkpoints/
-*.ipynb
 
 # Data files (don't commit large files)
 *.tiff
