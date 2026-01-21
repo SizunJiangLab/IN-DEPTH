@@ -1,0 +1,23 @@
+# Core dependencies
+numpy>=1.21.0
+scipy>=1.7.0
+scikit-image>=0.19.0
+scikit-learn>=1.0.0
+opencv-python>=4.5.0
+tifffile>=2022.5.4
+pandas>=1.3.0
+geopandas>=0.10.0
+shapely>=1.8.0
+pyyaml>=6.0
+tqdm>=4.62.0
+
+# Image I/O
+imagecodecs>=2022.2.22
+
+# pyqupath - install from GitHub:
+# pip install git+https://github.com/wuwenrui555/pyqupath.git
+pyqupath @ git+https://github.com/wuwenrui555/pyqupath.git
+
+# For segmentation (Step 9) - requires GPU
+# tensorflow>=2.8.0
+# deepcell>=0.12.0
