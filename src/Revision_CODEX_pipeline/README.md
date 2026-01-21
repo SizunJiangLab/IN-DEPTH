@@ -104,18 +104,7 @@ output/
 | `MAXIMA_THRESHOLD` | 0.075 | Mesmer cell detection sensitivity |
 | `INTERIOR_THRESHOLD` | 0.2 | Mesmer cell boundary threshold |
 
-## Citation
 
-If you use this code, please cite:
-
-```bibtex
-@article{yourpaper2025,
-  title={Your Paper Title},
-  author={Authors},
-  journal={Journal},
-  year={2025}
-}
-```
 
 ## License
 
