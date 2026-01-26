@@ -20,7 +20,7 @@ This pipeline processes cyclic immunofluorescence (CycIF) TMA data through the f
 | 10 | `10_extract_features.py` | Single-cell feature extraction |
 | 11 | `11_combine_images.py` | Combine channels from multiple sources |
 
-A notebook used to reproduce protein-related analysis in Fig6 is included in `notebook`.
+A notebook, `downstream_analysis.ipynb`, used to reproduce protein-related analysis in Fig6 is included in `notebook`.
 
 ## Requirements
 
