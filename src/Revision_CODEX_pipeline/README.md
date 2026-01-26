@@ -1,6 +1,6 @@
 # TMA Multiplexed Imaging Pipeline
 
-Code for processing multiplexed immunofluorescence tissue microarray (TMA) images, as described in [Your Paper Title].
+Code for processing multiplexed immunofluorescence tissue microarray (TMA) images.
 
 ## Overview
 
@@ -19,6 +19,8 @@ This pipeline processes cyclic immunofluorescence (CycIF) TMA data through the f
 | 9 | `09_segmentation.py` | Cell segmentation using Mesmer |
 | 10 | `10_extract_features.py` | Single-cell feature extraction |
 | 11 | `11_combine_images.py` | Combine channels from multiple sources |
+
+A notebook used to reproduce protein-related analysis in Fig6 is included in `notebook`.
 
 ## Requirements
 
