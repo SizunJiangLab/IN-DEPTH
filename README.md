@@ -6,11 +6,9 @@
 
 The advent of spatial transcriptomics and spatial proteomics have enabled profound insights into tissue organization and provided systems-level understanding of diseases. However, both technologies remain largely independent, and emerging same slide spatial multi-omics approaches are generally limited in plex, spatial resolution, and analysis approaches. We introduce <ins>***IN-situ DEtailed Phenotyping To High-resolution transcriptomics (IN-DEPTH)***</ins>, a streamlined and resource-effective approach compatible with various spatial platforms. This iterative approach first entails single-cell spatial proteomics and rapid analysis to guide subsequent spatial transcriptomics capture on the same slide without loss in RNA signal. We also introduce k-bandlimited Spectral Graph Cross-Correlation (SGCC) to facilitate additional insights through integrative spatial multi-omics analysis. Application of IN-DEPTH and SGCC on lymphoid tissues demonstrated precise single-cell phenotyping and cell-type specific transcriptome capture, and accurately resolved the local and global transcriptome changes associated with the cellular organization of germinal centers. We then implemented IN-DEPTH and SGCC to dissect the tumor microenvironment (TME) of Epstein-Barr Virus (EBV)-positive and EBV-negative diffuse large B-cell lymphoma (DLBCL). Our results identified a key tumor-macrophage-CD4 T-cell immunomodulatory axis differently regulated between EBV-positive and EBV-negative DLBCL, and its central role in coordinating immune dysfunction and suppression. IN-DEPTH enables scalable, resource-efficient, and comprehensive spatial multi-omics dissection of tissues to advance clinically relevant discoveries.
 
-## Overview of Code
+## Script for figures
 
 An overview of the purpose of different scripts in `paper_figures`.
-
-### Script for figures
 
 
 | File Name                              | Description                                             |
@@ -29,6 +27,20 @@ An overview of the purpose of different scripts in `paper_figures`.
 | 05_figure5A&B_SuppFig7A&B_half.R       | Code for plots in figure 5A&B and supplementary figures 7A&B (half portion) |
 | 05_figure5A&B&C&D_SuppFig7A&B.R        | Code for plots in figure 5A&B&C&D and supplementary figures 7A&B |
 | 05_figure5E.R                          | Code for plots in figure 5E                             |
+
+## Overview of code
+
+An overview of code in `src`. Scripts in this folder contain the preprocessing steps used to generate input data for scripts in `paper_figures`.
+
+| Folder name                            | Description                                             |
+|----------------------------------------|---------------------------------------------------------|
+| CODEX_GeoMX analysis for DLBCL         | Code for transcriptomics analysis in figure 5.           |
+| CODEX_GeoMx                            | Pipeline for proteomics data preprocessing and analysis in figure 4.|
+| CODEX_GeoMMx_Tonsil_run                | Pipeline for proteomics data preprocessing and analysis in figure 2. |
+| Revision_CODEX_pipeline                | Pipeline for proteomics data preprocessing and analysis in figure 6. |
+| CODEXonly_vs_postCODEX           |  |
+| SGCC_code           | Code for SGCC |
+
 
 ## SGCC (The codes are in src/SGCC_code for R users: version 4.4.0)
 
