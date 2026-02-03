@@ -8,7 +8,7 @@ The advent of spatial transcriptomics and spatial proteomics have enabled profou
 
 ## Overview of Code
 
-An overview of the purpose of different scripts in this repository.
+An overview of the purpose of different scripts in `paper_figures`.
 
 ### Script for figures
 
