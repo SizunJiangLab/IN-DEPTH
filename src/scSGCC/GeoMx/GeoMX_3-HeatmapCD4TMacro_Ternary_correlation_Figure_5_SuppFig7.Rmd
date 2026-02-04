@@ -1,0 +1,1013 @@
+---
+title: "DLBCL Heatmap and Ternary Plot Analysis: CD4T-Macrophage Interactions"
+subtitle: "Figure 5 and Supplementary Figure 7 Generation"
+author: "BioGSP Package"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    theme: flatly
+    df_print: paged
+  pdf_document:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{DLBCL Heatmap CD4T Macrophage Ternary Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      fig.width = 14, fig.height = 10)
+```
+
+# Introduction
+
+This analysis generates comprehensive visualizations for DLBCL spatial analysis, focusing on:
+
+- **Heatmaps**: Pathway enrichment analysis for CD4T cells and Macrophages
+- **Ternary Plots**: Three-way spatial correlation analysis between CD4T, Macrophage, and Tumor cells
+- **Correlation Analysis**: Relationship between EBV status, immune dysfunction, and spatial patterns
+
+The analysis produces figures for the main manuscript (Figure 5) and supplementary materials (Supplementary Figure 7).
+
+# Setup and Data Loading
+
+## Load Required Libraries and Set Paths
+
+```{r load-libraries}
+# Set global paths
+wdpath <- "/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Data/"
+results_path <- "/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Results"
+loadingfunction_wdpath <- "/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Code/src/"
+
+# Create results directory if it doesn't exist
+if (!dir.exists(results_path)) {
+  dir.create(results_path, recursive = TRUE)
+}
+
+# Load required libraries
+library(Ternary)
+library(dplyr)
+library(Seurat)
+library(GSVA)
+library(readr)
+library(tidyr)
+library(tidyverse)
+library(deldir)
+library(igraph)
+library(progress)
+library(qs)
+library(ggpubr)
+library(SingleCellExperiment)
+library(ggrepel)
+library(gridExtra)
+library(pheatmap)
+library(circlize)
+library(ComplexHeatmap)
+library(knitr)
+library(DT)
+
+cat("Libraries loaded successfully!\n")
+cat("Results will be saved to:", results_path, "\n")
+```
+
+## Load Custom Functions and Gene Lists
+
+```{r load-functions}
+# Source custom functions
+source(file.path(loadingfunction_wdpath, "5-Preload_customized_gene_list.R"))
+source(file.path(loadingfunction_wdpath, "4-post_DEG_heatmap_visualization_preloadfunction-mergeMacroTumorT.R"))
+source(file.path(loadingfunction_wdpath, "2-rank_SGCC_Impulse_preload_function.R"))
+source(file.path(loadingfunction_wdpath, "3-WithinCrossDomainTableAndVisualization_preload_function.R"))
+
+cat("Custom functions loaded successfully!\n")
+```
+
+## Define Analysis Parameters
+
+```{r define-parameters}
+# Define cell type pairs for analysis
+Celltypepairs <- c("CD4T", "Macro")
+SGCC_pair <- "Macro_CD4T"
+
+# Assign cell types
+CT.1 <- Celltypepairs[[1]]  # CD4T
+CT.2 <- Celltypepairs[[2]]  # Macro
+
+cat("Analysis parameters:\n")
+cat("- Cell type 1 (CT.1):", CT.1, "\n")
+cat("- Cell type 2 (CT.2):", CT.2, "\n")
+cat("- SGCC pair:", SGCC_pair, "\n")
+```
+
+## Load Expression Data and Metadata
+
+```{r load-expression-data}
+# Load expression matrices and metadata
+CT.1.exp <- list_exp_matrix_metadata[[CT.1]]
+CT.2.exp <- list_exp_matrix_metadata[[CT.2]]
+
+# Create SingleCellExperiment objects
+spe_obj_CT1 <- SingleCellExperiment(
+  assays = list(
+    counts = as.matrix(CT.1.exp),
+    logcounts = as.matrix(CT.1.exp)
+  ),
+  colData = list_exp_matrix_metadata$reformedMeta
+)
+
+spe_obj_CT2 <- SingleCellExperiment(
+  assays = list(
+    counts = as.matrix(CT.2.exp),
+    logcounts = as.matrix(CT.2.exp)
+  ),
+  colData = list_exp_matrix_metadata$reformedMeta
+)
+
+cat("Expression data loaded:\n")
+cat("- CT1 (", CT.1, ") dimensions:", dim(CT.1.exp), "\n")
+cat("- CT2 (", CT.2, ") dimensions:", dim(CT.2.exp), "\n")
+```
+
+# Data Preprocessing
+
+## Load SGCC Matrix and Annotation Data
+
+```{r load-sgcc-annotation}
+# Load SGCC matrix
+SGCC_matrix <- read.csv(file.path(results_path, "60_SGCC_matrix_DLBCL_mergeMacro_mergeTumor_mergeT.csv"), row.names = 1)
+
+# Create submatrix for relevant cell type combinations
+recalled_CTs <- combn(c("Macro", "CD4T", "Tumor"), 2, FUN = function(x) paste(x, collapse = "_"))
+SGCC_submatrix <- SGCC_matrix[recalled_CTs, ]
+
+cat("SGCC matrix loaded:\n")
+cat("- Full matrix dimensions:", dim(SGCC_matrix), "\n")
+cat("- Submatrix dimensions:", dim(SGCC_submatrix), "\n")
+cat("- Cell type combinations:", paste(recalled_CTs, collapse = ", "), "\n")
+
+print(head(SGCC_submatrix))
+```
+
+## Process Annotation Data
+
+```{r process-annotations}
+# Load and process annotation data
+annotation <- list_exp_matrix_metadata$annotation
+
+# Standardize annotations
+annotation <- annotation %>%
+  mutate(Annotation = case_when(
+    grepl("CD8", Annotation) ~ "CD8T",
+    grepl("CD4", Annotation) ~ "CD4T",
+    grepl("Tumor", Annotation) ~ "Tumor",
+    grepl("M1", Annotation) ~ "Macro",
+    grepl("M2", Annotation) ~ "Macro",
+    TRUE ~ Annotation
+  ))
+
+# Filter annotations
+annotation <- annotation %>%
+  filter(!Annotation %in% c("Other", "Neutrophil")) %>%
+  filter(!grepl("Tonsil", coreName))
+
+cat("Unique core names after filtering:\n")
+print(unique(annotation$coreName))
+```
+
+## Define Selected Cores
+
+```{r define-cores}
+# Specify selected cores for analysis
+selected_cores <- c(
+  "Rochester_4", "Rochester_6", "Rochester_7", "Rochester_9", 
+  "Rochester_11", "Rochester_12", "Rochester_13", "Rochester_14", 
+  "Rochester_25", "Rochester_15", "Rochester_16", "Rochester_17", 
+  "Rochester_18", "Rochester_19", "Rochester_21", "Rochester_23",
+  "DFCI_2.2", "DFCI_3.2", "DFCI_4.1", "DFCI_7.1", "DFCI_8.1",
+  "DFCI_12.1", "DFCI_13.2", "DFCI_15.2", "DFCI_17.1",
+  "DFCI_18.2", "DFCI_19.2", "DFCI_22.2", "DFCI_23.2"
+)
+
+# Filter for selected cores
+annotation <- annotation %>%
+  filter(coreName %in% selected_cores)
+
+cat("Selected cores for analysis:", length(selected_cores), "\n")
+cat("Cores after filtering:", length(unique(annotation$coreName)), "\n")
+```
+
+## Cell Number Summary
+
+```{r cell-summary}
+# Summarize cell numbers per core
+cellnumber_percore <- annotation %>%
+  filter(Annotation %in% c("CD4T", "CD8T", "Macro", "Endothelial")) %>%
+  group_by(coreName, Annotation) %>%
+  summarise(cell_count = n(), .groups = 'drop') %>%
+  mutate(ROI_CT = paste0(coreName, "_", Annotation))
+
+cat("Cell number summary:\n")
+summary_stats <- cellnumber_percore %>%
+  group_by(Annotation) %>%
+  summarise(
+    total_cells = sum(cell_count),
+    mean_per_core = round(mean(cell_count), 2),
+    median_per_core = median(cell_count),
+    min_per_core = min(cell_count),
+    max_per_core = max(cell_count),
+    .groups = 'drop'
+  )
+
+DT::datatable(summary_stats, 
+              caption = "Cell count statistics by annotation",
+              options = list(pageLength = 10, scrollX = TRUE))
+```
+
+## Sample Filtering
+
+```{r sample-filtering}
+# Filter samples based on cell number differences
+filtered_summary <- filter_samples_summary(
+  annotation,
+  max_diff = 1,
+  cell_types = c(Celltypepairs[[1]], Celltypepairs[[2]]),
+  tumor_annotation = "Tumor",
+  tumor_upper = 1, 
+  tumor_lower = 0,
+  logfc = 10
+)
+
+# Identify samples to drop
+drop.samples <- setdiff(spe_obj_CT1$ROI_rename, selected_cores)
+
+cat("Samples to drop:", length(drop.samples), "\n")
+if(length(drop.samples) > 0) {
+  cat("Dropped samples:", paste(head(drop.samples, 10), collapse = ", "), "\n")
+  if(length(drop.samples) > 10) cat("... and", length(drop.samples) - 10, "more\n")
+}
+```
+
+# SGCC Analysis and Metadata Preparation
+
+## Prepare SGCC Metadata for Both Cell Types
+
+```{r prepare-sgcc-metadata}
+# Prepare metadata for CT1 (CD4T)
+prepare_meta_output_CT1 <- prepare_meta_SGCC(
+  spe_obj = spe_obj_CT1,
+  SGCC_df = SGCC_matrix,
+  cell_pair = c(SGCC_pair),
+  CT.use = CT.1,
+  condition_name = "EBV_Indicator",
+  sample.drop = c(drop.samples),
+  batch.factor = "Cohort"
+)
+
+# Prepare metadata for CT2 (Macro)
+prepare_meta_output_CT2 <- prepare_meta_SGCC(
+  spe_obj = spe_obj_CT2,
+  SGCC_df = SGCC_matrix,
+  cell_pair = c(SGCC_pair),
+  CT.use = CT.2,
+  condition_name = "EBV_Indicator",
+  sample.drop = c(drop.samples),
+  batch.factor = "Cohort"
+)
+
+cat("SGCC metadata prepared:\n")
+cat("- CT1 samples:", ncol(prepare_meta_output_CT1[[2]]), "\n")
+cat("- CT2 samples:", ncol(prepare_meta_output_CT2[[2]]), "\n")
+```
+
+## Create Enhanced Metadata
+
+```{r create-enhanced-metadata}
+# Create enhanced metadata for CT1 (CD4T)
+metaoutput_CT1 <- spe_obj_CT1@colData %>%
+  as.data.frame() %>%
+  select(ROI_CT, virus_loading, virus_loading_InTumor, total_cells, total_tumor_cells,
+         Tumor_other_cell, Tumor_BCL2_cell, Tumor_BCL6_cell, LMP1_g_tumor,CD45RA_CD4T,CD45RO_CD4T,
+         Tumor_Myc_cell, LMP1_filtered_mean, LMP1_positive_numebr, LMP1_pct,
+         m1_pct, m2_pct, m1_odds, m2_odds, PD1_CD4T, PDL1_macro, Tox_CD4T, 
+         LAG3_CD4T, HLADR_macro, dysfunction_score_protein) %>%
+  right_join(prepare_meta_output_CT1[[1]], by = "ROI_CT") %>%
+  mutate(
+    SGCC_cat = case_when(
+      Time == 1 ~ "SGCC low",
+      Time == 2 ~ "SGCC mediate", 
+      Time == 3 ~ "SGCC high",
+      TRUE ~ NA_character_
+    ),
+    EBV_status = case_when(
+      Condition == "case" ~ "EBV+",
+      Condition == "control" ~ "EBV-"
+    )
+  )
+
+# Create enhanced metadata for CT2 (Macro)
+metaoutput_CT2 <- spe_obj_CT2@colData %>%
+  as.data.frame() %>%
+  select(ROI_CT, virus_loading, virus_loading_InTumor, total_cells, total_tumor_cells,
+         Tumor_other_cell, Tumor_BCL2_cell, Tumor_BCL6_cell, LMP1_g_tumor,CD45RA_CD4T,CD45RO_CD4T,
+         Tumor_Myc_cell, LMP1_filtered_mean, LMP1_positive_numebr, LMP1_pct,
+         m1_pct, m2_pct, m1_odds, m2_odds, PD1_CD4T, PDL1_macro, Tox_CD4T, 
+         LAG3_CD4T, HLADR_macro, dysfunction_score_protein) %>%
+  right_join(prepare_meta_output_CT2[[1]], by = "ROI_CT") %>%
+  mutate(
+    SGCC_cat = case_when(
+      Time == 1 ~ "SGCC low",
+      Time == 2 ~ "SGCC mediate",
+      Time == 3 ~ "SGCC high", 
+      TRUE ~ NA_character_
+    ),
+    EBV_status = case_when(
+      Condition == "case" ~ "EBV+",
+      Condition == "control" ~ "EBV-"
+    )
+  )
+
+cat("Enhanced metadata created:\n")
+cat("- CT1 metadata rows:", nrow(metaoutput_CT1), "\n")
+cat("- CT2 metadata rows:", nrow(metaoutput_CT2), "\n")
+cat("- EBV+ samples:", sum(metaoutput_CT1$EBV_status == "EBV+", na.rm = TRUE), "\n")
+cat("- EBV- samples:", sum(metaoutput_CT1$EBV_status == "EBV-", na.rm = TRUE), "\n")
+```
+
+# GSVA Pathway Analysis
+
+## Run GSVA for CD4T Cells
+
+```{r gsva-cd4t}
+# Set up GSVA parameters for CD4T
+SetGSVAPar_CT1 <- gsvaParam(
+  exprData = prepare_meta_output_CT1[[2]],
+  geneSets = functionalenrichment[grep(paste0("^", Celltypepairs[[1]]), names(functionalenrichment))],
+  minSize = 3, 
+  maxSize = 400,
+  kcdf = "Gaussian"
+)
+
+# Run GSVA analysis
+gsva_results_CT1 <- gsva(SetGSVAPar_CT1, verbose = TRUE)
+GSVA_pathwayname_CT1 <- rownames(gsva_results_CT1)
+
+cat("GSVA analysis for CD4T completed:\n")
+cat("- Number of pathways:", nrow(gsva_results_CT1), "\n")
+cat("- Pathways analyzed:", paste(GSVA_pathwayname_CT1, collapse = ", "), "\n")
+```
+
+## Run GSVA for Macrophages
+
+```{r gsva-macro}
+# Set up GSVA parameters for Macrophages
+SetGSVAPar_CT2 <- gsvaParam(
+  exprData = prepare_meta_output_CT2[[2]],
+  geneSets = functionalenrichment[grep(paste0("^", Celltypepairs[[2]]), names(functionalenrichment))],
+  minSize = 3, 
+  maxSize = 100,
+  kcdf = "Gaussian"
+)
+
+# Run GSVA analysis
+gsva_results_CT2 <- gsva(SetGSVAPar_CT2, verbose = TRUE)
+GSVA_pathwayname_CT2 <- rownames(gsva_results_CT2)
+
+cat("GSVA analysis for Macrophages completed:\n")
+cat("- Number of pathways:", nrow(gsva_results_CT2), "\n")
+cat("- Pathways analyzed:", paste(GSVA_pathwayname_CT2, collapse = ", "), "\n")
+```
+
+# Heatmap Generation
+
+## Generate Macrophage Pathway Heatmap
+
+```{r macro-heatmap, fig.width=12, fig.height=10}
+# Create macrophage pathway heatmap
+Genelist_CT2 <- intersect(Macro_customized_M1M2, rownames(prepare_meta_output_CT2[[2]]))
+
+Macropage_heatmap_pathway <- create_complex_heatmap_FixEBV(
+  gene_list = NA,
+  pathway_matrix = gsva_results_CT2,
+  scale_color_ht = 2,
+  expr_data = prepare_meta_output_CT2[[2]],
+  meta_data = metaoutput_CT2,
+  cluster_rows = TRUE,
+  cluster_columns = FALSE
+)
+
+# Display the heatmap
+draw(Macropage_heatmap_pathway)
+
+# Save the heatmap
+pdf(file.path(results_path, "Figures_5A_5B_SuppFig7A_Macrophage-CD4T-Macrophage_heatmap.pdf"), 
+    width = 10, height = 9)
+draw(Macropage_heatmap_pathway)
+dev.off()
+
+cat("Macrophage heatmap saved to:", file.path(results_path, "Figures_5A_5B_SuppFig7A_Macrophage-CD4T-Macrophage_heatmap.pdf"), "\n")
+```
+
+## Generate CD4T Pathway Heatmap
+
+```{r tumor-gene-heatmap, fig.width=12, fig.height=10}
+# CD4 gene heatmap (based on 05_figure5A&B_SuppFig7A&B_half.R)
+Genelist_CT1 <- intersect(Tumor_customized_M1M2_formation, rownames(prepare_meta_output_CT1[[2]]))
+
+# CD4 pathway heatmap (based on 05_figure5A&B_SuppFig7A&B_half.R)
+CD4T_heatmap_pathway <- create_complex_heatmap_FixEBV(
+  gene_list = NA,
+  scale_color_ht = 2,
+  pathway_matrix = gsva_results_CT1,
+  expr_data = prepare_meta_output_CT1[[2]],
+  meta_data = metaoutput_CT1,
+  cluster_rows = TRUE,
+  cluster_columns = FALSE
+)
+
+# Display the heatmap
+draw(CD4T_heatmap_pathway)
+
+# Save Tumor pathway heatmap
+pdf(file.path(results_path, "Figures_5A_5B_SuppFig7A_CD4T-CD4T-Macrophage_pathway_heatmap.pdf"), 
+    width = 10, height = 9)
+draw(CD4T_heatmap_pathway)
+dev.off()
+
+cat("Tumor pathway heatmap saved to:", file.path(results_path, "Figures_5A_5B_SuppFig7A_CD4T-CD4T-Macrophage_pathway_heatmap.pdf"), "\n")
+```
+
+## Generate CD4T Exhaustion Score Annotation
+
+```{r cd4t-exhaustion-annotation, fig.width=12, fig.height=8}
+# Create CD4T exhaustion score annotation heatmap
+CD4T_heatmap_annotation_exhaustion_score <- create_complex_heatmap_annotation_from_pathway(
+  pathway_matrix = gsva_results_CT1,
+  scale_color_ht = 2,
+  meta_data = metaoutput_CT1,
+  pathwayname = "CD4T_customized_Tcell_exhaustion"
+)
+
+# Display the annotation heatmap
+draw(CD4T_heatmap_annotation_exhaustion_score)
+
+# Save the annotation heatmap
+pdf(file.path(results_path, "Figure5B_T_dysfunction_RNA_annotation_bar.pdf"), 
+    width = 10, height = 9)
+draw(CD4T_heatmap_annotation_exhaustion_score)
+dev.off()
+
+cat("CD4T exhaustion annotation saved to:", file.path(results_path, "Figure5B_T_dysfunction_RNA_annotation_bar.pdf"), "\n")
+```
+
+# Ternary Plot Analysis
+
+# Prepare Ternary Data
+
+```{r prepare-ternary}
+minmax_rescale <- function(x) (x - min(x)) / (max(x) - min(x))
+transformed <- apply(as.matrix(SGCC_submatrix), 1, FUN = minmax_rescale)
+transformed <- transformed / rowSums(transformed) * 100
+transformed <- cbind.data.frame(transformed, t(SGCC_submatrix))
+colnames(transformed) <- c("T_M", "T_Tu", "M_Tu", "SGCC_T_M", "SGCC_T_Tu", "SGCC_M_Tu")
+transformed$Core <- rownames(transformed)
+transformed$ROI_CT <- paste0(rownames(transformed), "_CD4T")
+
+# Join EBV_status (and other metadata) onto ternary data
+transformed <- transformed %>% right_join(metaoutput_CT1, by = c("ROI_CT" = "ROI_CT"))
+transformed <- transformed %>% filter(!is.na(T_M))
+```
+
+# Define Ternary Plot Helper Functions
+
+```{r define-ternary-functions}
+# Create basic ternary plot using Ternary package
+create_ternary_plot_basic <- function(data, title = "Ternary Plot", show_density = FALSE, density_resolution = 30L) {
+  # Set up colors for EBV status
+  ebv_colors <- c("EBV+" = "#ca6938", "EBV-" = "#4a9d7a")
+  ebv_shapes <- c("EBV+" = 21, "EBV-" = 24)
+  
+  # Create the ternary plot
+  TernaryPlot(alab = "M-Tu", blab = "T-Tu", clab = "T-M", 
+              main = title, grid.minor.lines = 0)
+
+  # Optionally overlay EBV-specific density contours
+  if (show_density) {
+    for (status in c("EBV+", "EBV-")) {
+      subset_data <- data[data$EBV_status == status, c("M_Tu", "T_Tu", "T_M")]
+      if (nrow(subset_data) > 2 && all(colSums(is.na(subset_data)) < nrow(subset_data))) {
+        # Remove rows with any NA to avoid errors in density computation
+        coords <- as.matrix(subset_data[stats::complete.cases(subset_data), , drop = FALSE])
+        if (nrow(coords) > 2) {
+          TernaryDensityContour(coords, resolution = density_resolution, color.palette = ebv_colors[status], lwd = 1.5)
+        }
+      }
+    }
+  }
+  
+  # Add points for each EBV status
+  for (status in c("EBV+", "EBV-")) {
+    subset_data <- data[data$EBV_status == status, ]
+    if (nrow(subset_data) > 0) {
+      TernaryPoints(subset_data[, c("M_Tu", "T_Tu", "T_M")], 
+                   col = ebv_colors[status], 
+                   pch = ebv_shapes[status], 
+                   cex = 2.5, 
+                   bg = ebv_colors[status])
+    }
+  }
+  
+  # Add legend
+  legend("topright", legend = names(ebv_colors), 
+         col = ebv_colors, pch = ebv_shapes, pt.bg = ebv_colors,
+         title = "EBV Status", bty = "n")
+}
+
+# Create ternary plot with labels
+create_ternary_plot_with_labels <- function(data, title = "Ternary Plot with Labels", show_density = FALSE, density_resolution = 30L) {
+  # Set up colors for EBV status
+  ebv_colors <- c("EBV+" = "#ca6938", "EBV-" = "#4a9d7a")
+  ebv_shapes <- c("EBV+" = 21, "EBV-" = 24)
+  
+  # Create the ternary plot
+  TernaryPlot(alab = "M-Tu", blab = "T-Tu", clab = "T-M", 
+              main = title, grid.minor.lines = 0)
+
+  # Optionally overlay EBV-specific density contours
+  if (show_density) {
+    for (status in c("EBV+", "EBV-")) {
+      subset_data <- data[data$EBV_status == status, c("M_Tu", "T_Tu", "T_M")]
+      if (nrow(subset_data) > 2 && all(colSums(is.na(subset_data)) < nrow(subset_data))) {
+        coords <- as.matrix(subset_data[stats::complete.cases(subset_data), , drop = FALSE])
+        if (nrow(coords) > 2) {
+          TernaryDensityContour(coords, resolution = density_resolution, color.palette = ebv_colors[status], lwd = 1.5)
+        }
+      }
+    }
+  }
+  
+  # Add points for each EBV status
+  for (status in c("EBV+", "EBV-")) {
+    subset_data <- data[data$EBV_status == status, ]
+    if (nrow(subset_data) > 0) {
+      TernaryPoints(subset_data[, c("M_Tu", "T_Tu", "T_M")], 
+                   col = ebv_colors[status], 
+                   pch = ebv_shapes[status], 
+                   cex = 2.5, 
+                   bg = ebv_colors[status])
+      
+      # Add text labels
+      TernaryText(subset_data[, c("M_Tu", "T_Tu", "T_M")], 
+                 labels = subset_data$ROI_CT, 
+                 cex = 0.4, 
+                 col = "black")
+    }
+  }
+  
+  # Add legend
+  legend("topright", legend = names(ebv_colors), 
+         col = ebv_colors, pch = ebv_shapes, pt.bg = ebv_colors,
+         title = "EBV Status", bty = "n")
+}
+
+# Create function for biomarker ternary plots
+create_biomarker_ternary_plot <- function(data, biomarker_col, title, 
+                                         low_color = "#fafafa", high_color = "#fc7051",
+                                         show_density = FALSE, density_resolution = 30L) {
+  # Set up colors and shapes for EBV status
+  ebv_colors <- c("EBV+" = "#ca6938", "EBV-" = "#4a9d7a")
+  ebv_shapes <- c("EBV+" = 21, "EBV-" = 24)
+  
+  # Create the ternary plot
+  TernaryPlot(alab = "M-Tu", blab = "T-Tu", clab = "T-M", 
+              main = title, grid.minor.lines = 0)
+  
+  # Optionally overlay EBV-specific density contours
+  if (show_density) {
+    for (status in c("EBV+", "EBV-")) {
+      subset_data <- data[data$EBV_status == status, c("M_Tu", "T_Tu", "T_M")]
+      if (nrow(subset_data) > 2 && all(colSums(is.na(subset_data)) < nrow(subset_data))) {
+        coords <- as.matrix(subset_data[stats::complete.cases(subset_data), , drop = FALSE])
+        if (nrow(coords) > 2) {
+          TernaryDensityContour(coords, resolution = density_resolution, col = ebv_colors[status], lwd = 1.5)
+        }
+      }
+    }
+  }
+  
+  # Normalize biomarker values for color mapping
+  biomarker_values <- data[[biomarker_col]]
+  biomarker_norm <- (biomarker_values - min(biomarker_values, na.rm = TRUE)) / 
+                   (max(biomarker_values, na.rm = TRUE) - min(biomarker_values, na.rm = TRUE))
+  
+  # Create color gradient
+  biomarker_colors <- colorRampPalette(c(low_color, high_color))(100)
+  point_colors <- biomarker_colors[pmax(1, pmin(100, round(biomarker_norm * 99 + 1)))]
+  
+  # Add points for each EBV status
+  for (status in c("EBV+", "EBV-")) {
+    subset_indices <- which(data$EBV_status == status)
+    if (length(subset_indices) > 0) {
+      subset_data <- data[subset_indices, ]
+      TernaryPoints(subset_data[, c("M_Tu", "T_Tu", "T_M")], 
+                   col = "black", 
+                   pch = ebv_shapes[status], 
+                   cex = 2.5, 
+                   bg = point_colors[subset_indices])
+    }
+  }
+  
+  # Add legend for EBV status
+  legend("topright", legend = names(ebv_shapes), 
+         col = "black", pch = ebv_shapes, pt.bg = ebv_colors,
+         title = "EBV Status", bty = "n")
+  
+  # Add color bar legend for biomarker (simplified)
+  legend("topleft", legend = c("Low", "High"), 
+         col = "black", pch = 21, pt.bg = c(low_color, high_color),
+         title = biomarker_col, bty = "n")
+}
+
+# Create function for AES ternary plots (with log transformation and different colors)
+create_aes_ternary_plot <- function(data, aes_col, title, show_density = FALSE, density_resolution = 30L) {
+  # Transform the AES data
+  data_copy <- data
+  data_copy[[paste0(aes_col, "_log")]] <- log1p(data[[aes_col]])
+  
+  # Create the plot with blue-yellow color scheme
+  create_biomarker_ternary_plot(data_copy, paste0(aes_col, "_log"), title, 
+                               low_color = "#2424db", high_color = "yellow",
+                               show_density = show_density, density_resolution = density_resolution)
+}
+```
+
+# Basic Ternary Plots
+
+```{r basic-ternary-plots, fig.width=10, fig.height=8}
+# Basic ternary plot using Ternary package
+create_ternary_plot_basic(transformed, "CD4T-Macrophage-Tumor Spatial Correlations")
+
+# Ternary plot with sample names
+create_ternary_plot_with_labels(transformed, "Ternary Plot with Sample Labels")
+```
+
+# Protein Marker Ternary Plots
+
+```{r protein-ternary-plots, fig.width=12, fig.height=10}
+# LAG3 CD4T ternary plot
+create_biomarker_ternary_plot(transformed, "LAG3_CD4T", "LAG3 Expression in CD4T Cells")
+
+# TOX CD4T ternary plot
+create_biomarker_ternary_plot(transformed, "Tox_CD4T", "TOX Expression in CD4T Cells")
+
+# HLA-DR Macrophage ternary plot
+create_biomarker_ternary_plot(transformed, "HLADR_macro", "HLA-DR Expression in Macrophages")
+
+# PD-L1 Macrophage ternary plot
+create_biomarker_ternary_plot(transformed, "PDL1_macro", "PD-L1 Expression in Macrophages")
+```
+
+# Load AES Data and Create Enhanced Ternary Plots
+
+```{r load-aes-data}
+# Load AES (Adaptive Enrichment Score) results
+CD4T_Macro <- qread(file.path(wdpath, "SGCC_relevant_analysis", "Macro_CD4Tstat.result.qs"))
+Tumor_Macro <- qread(file.path(wdpath, "SGCC_relevant_analysis", "Macro_Tumorstat.result.qs"))
+CD4T_Tumor <- qread(file.path(wdpath, "SGCC_relevant_analysis", "CD4T_Tumorstat.result.qs"))
+
+# Rename columns and add Core identifier
+colnames(CD4T_Tumor) <- paste0(colnames(CD4T_Tumor), "_T_Tu")
+CD4T_Tumor$Core <- rownames(CD4T_Tumor)
+
+colnames(Tumor_Macro) <- paste0(colnames(Tumor_Macro), "_M_Tu")
+Tumor_Macro$Core <- rownames(Tumor_Macro)
+
+colnames(CD4T_Macro) <- paste0(colnames(CD4T_Macro), "_T_M")
+CD4T_Macro$Core <- rownames(CD4T_Macro)
+
+# Add exhaustion score
+sorted_CD4T_customized_Tcell_exhaustion <- gsva_results_CT1["CD4T_customized_Tcell_exhaustion", ][transformed$Sample]
+
+# Create comprehensive dataset
+transformed_CD4T_Macro_Tumor <- Tumor_Macro %>%
+  filter(Core %in% selected_cores) %>%
+  left_join(CD4T_Macro, by = "Core") %>%
+  left_join(CD4T_Tumor, by = "Core") %>%
+  left_join(transformed, by = "Core")
+
+transformed_CD4T_Macro_Tumor$CD4T_exhaustion_gene <- sorted_CD4T_customized_Tcell_exhaustion
+
+cat("AES data loaded and merged:\n")
+cat("- Final dataset dimensions:", dim(transformed_CD4T_Macro_Tumor), "\n")
+```
+
+# EBV+ vs EBV- Statistical Tests for Scores
+
+```{r ebv-score-tests}
+# scores to test (only keep existing columns)
+score_cols <- intersect(c(
+  "LAG3_CD4T","Tox_CD4T","HLADR_macro","PDL1_macro","PD1_CD4T","CD45RO_CD4T",
+  "LMP1_filtered_mean","LMP1_pct",
+  "CD4T_exhaustion_gene","dysfunction_score_protein",
+  "AES_M_Tu","AES_T_M","AES_T_Tu",
+  "m2_pct"
+), colnames(transformed_CD4T_Macro_Tumor))
+
+ebv_test_one <- function(df, sc) {
+  d <- df %>%
+    transmute(
+      EBV_status = factor(EBV_status, levels = c("EBV-","EBV+")),
+      Cohort = factor(Batch),
+      value = .data[[sc]]
+    ) %>%
+    filter(!is.na(EBV_status), !is.na(value), !is.na(Cohort))
+
+  fit <- lm(value ~ EBV_status + Cohort, data = d)
+  tibble(
+    score = sc,
+    estimate = unname(coef(fit)[["EBV_statusEBV+"]]),
+    p_value  = summary(fit)$coefficients["EBV_statusEBV+", "Pr(>|t|)"]
+  )
+}
+
+ebv_score_tests <- bind_rows(lapply(score_cols, \(sc)
+  ebv_test_one(transformed_CD4T_Macro_Tumor, sc)
+)) %>% select(score, p_value) %>% 
+  arrange(p_value)
+
+ebv_score_tests
+
+
+
+
+```
+
+# Enhanced Ternary Plots with AES and Gene Expression
+
+```{r enhanced-ternary-plots, fig.width=12, fig.height=10}
+# LMP1 expression ternary plot
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "LMP1_filtered_mean", "LMP1 Expression (Filtered Mean)")
+
+# PD-1 CD4T ternary plot
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "PD1_CD4T", "PD-1 Expression in CD4T Cells")
+
+# CD4T exhaustion gene signature
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "CD4T_exhaustion_gene", "CD4T Exhaustion Gene Signature")
+
+# Dysfunction score protein
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "dysfunction_score_protein", "Dysfunction Score (Protein)")
+```
+
+# AES Score Ternary Plots
+
+```{r aes-ternary-plots, fig.width=12, fig.height=10}
+# AES Macrophage-Tumor
+create_aes_ternary_plot(transformed_CD4T_Macro_Tumor, "AES_M_Tu", "AES Score: Macrophage-Tumor")
+
+# AES CD4T-Macrophage
+create_aes_ternary_plot(transformed_CD4T_Macro_Tumor, "AES_T_M", "AES Score: CD4T-Macrophage")
+
+# AES CD4T-Tumor
+create_aes_ternary_plot(transformed_CD4T_Macro_Tumor, "AES_T_Tu", "AES Score: CD4T-Tumor")
+```
+
+# Additional Biomarker Ternary Plots
+
+```{r biomarker-ternary-plots, fig.width=12, fig.height=10}
+# LMP1 tumor percentage
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "LMP1_pct", "LMP1 Percentage in Tumor")
+
+# M2 percentage
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "m2_pct", "M2 Macrophage Percentage")
+```
+
+# Save Comprehensive Ternary Plot Figure
+
+```{r save-ternary-plots, fig.width=30, fig.height=30}
+# Save comprehensive ternary plots using base plotting layout
+pdf(file.path(results_path, "Figure_5C_5D_SuppFig7C_Comprehensive_Ternary_Plots.pdf"), 
+    width = 30, height = 30)
+
+# 3 rows x 5 columns
+par(mfrow = c(3, 5), mar = c(2, 2, 3, 2))
+
+# Row 1
+create_ternary_plot_basic(transformed_CD4T_Macro_Tumor, "CD4T-Macrophage-Tumor Spatial Correlations")
+create_ternary_plot_with_labels(transformed_CD4T_Macro_Tumor, "Ternary Plot with Sample Labels")
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "CD4T_exhaustion_gene", "CD4T Exhaustion Gene Signature")
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "dysfunction_score_protein", "Dysfunction Score (Protein)")
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "LMP1_filtered_mean", "LMP1 Expression (Filtered Mean)")
+
+# Row 2
+create_aes_ternary_plot(transformed_CD4T_Macro_Tumor, "AES_T_M", "AES Score: CD4T-Macrophage")
+create_aes_ternary_plot(transformed_CD4T_Macro_Tumor, "AES_M_Tu", "AES Score: Macrophage-Tumor")
+create_aes_ternary_plot(transformed_CD4T_Macro_Tumor, "AES_T_Tu", "AES Score: CD4T-Tumor")
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "HLADR_macro", "HLA-DR Expression in Macrophages")
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "PDL1_macro", "PD-L1 Expression in Macrophages")
+
+# Row 3
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "Tox_CD4T", "TOX Expression in CD4T Cells")
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "LAG3_CD4T", "LAG3 Expression in CD4T Cells")
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "PD1_CD4T", "PD-1 Expression in CD4T Cells")
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "LMP1_pct", "LMP1 Percentage in Tumor")
+create_biomarker_ternary_plot(transformed_CD4T_Macro_Tumor, "m2_pct", "M2 Macrophage Percentage")
+
+dev.off()
+
+# Reset plotting parameters
+par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1)
+
+cat("Comprehensive ternary plots saved to:", file.path(results_path, "Figure_5C_5D_SuppFig7C_Comprehensive_Ternary_Plots.pdf"), "\n")
+write.csv(transformed_CD4T_Macro_Tumor, file =file.path(results_path, "tableSupp4_SGCCternary.csv") )
+```
+
+# Correlation Analysis
+
+## Prepare Data for Correlation Analysis
+
+```{r prepare-correlation-data}
+# Define functional variables for LMP1 correlation analysis
+functional_test_for_LMP1 <- c(
+  "dysfunction_score_protein", "LMP1_filtered_mean", "LMP1_g_tumor", 
+  "LMP1_positive_numebr", "m2_pct", "m1_pct", "CD4T_exhaustion_gene"
+)
+
+# Select data for correlation analysis
+selected_data <- transformed_CD4T_Macro_Tumor %>%
+  select(all_of(functional_test_for_LMP1))
+
+cat("Correlation analysis variables:\n")
+cat(paste(functional_test_for_LMP1, collapse = ", "), "\n")
+cat("Data dimensions for correlation:", dim(selected_data), "\n")
+```
+
+## Compute Correlations and Generate Scatter Plots
+
+```{r correlation-analysis}
+# Compute Spearman correlation matrix
+correlation.tst <- cor(selected_data, use = "pairwise.complete.obs", method = "spearman")
+correlation.tst <- ifelse(is.na(correlation.tst), 0, correlation.tst)
+diag(correlation.tst) <- 0
+
+# Initialize p-value matrix
+correlation_pvalues <- matrix(NA, ncol = ncol(selected_data), nrow = ncol(selected_data))
+rownames(correlation_pvalues) <- colnames(selected_data)
+colnames(correlation_pvalues) <- colnames(selected_data)
+
+# Perform pairwise correlation tests and generate scatter plots
+significant_pairs <- 0
+for (i in seq_len(ncol(selected_data))) {
+  for (j in seq_len(ncol(selected_data))) {
+    if (i != j) {
+      # Perform Spearman correlation test
+      test_result <- cor.test(selected_data[[i]], selected_data[[j]], method = "spearman")
+      correlation_pvalues[i, j] <- test_result$p.value
+      
+      if(correlation_pvalues[i, j] <= 0.05) {
+        significant_pairs <- significant_pairs + 1
+        
+        # Generate scatter plot with ggplot2
+        plot_data <- data.frame(
+          x = selected_data[[i]], 
+          y = selected_data[[j]], 
+          EBV = transformed_CD4T_Macro_Tumor$EBV_status
+        )
+        
+        plot <- ggplot(plot_data, aes(x = x, y = y, color = EBV)) +
+          geom_point(size = 3) +
+          geom_smooth(method = "lm", color = "blue", se = TRUE) +
+          scale_color_manual(
+            values = c("#ca6938", "#4a9d7a"),
+            breaks = c("EBV+", "EBV-")
+          ) +
+          theme_classic() +
+          labs(
+            title = paste(colnames(selected_data)[i], "vs", colnames(selected_data)[j]),
+            x = colnames(selected_data)[i],
+            y = colnames(selected_data)[j]
+          ) + # geom_smooth(span = 0.3)+
+          theme(
+            panel.background = element_rect(fill = "transparent", color = NA),
+            plot.background = element_rect(fill = "transparent", color = NA),
+            legend.background = element_rect(fill = "transparent", color = NA)
+          )
+        
+        # Save scatter plot
+        ggsave(
+          filename = file.path(results_path, paste0("SuppFig7_scatterplot_", 
+                                                   colnames(selected_data)[i], "_vs_", 
+                                                   colnames(selected_data)[j], ".pdf")),
+          plot = plot,
+          device = "pdf",
+          bg = "transparent",
+          width = 8, height = 8, units = "in", dpi = 300
+        )
+      }
+    }
+  }
+}
+
+cat("Correlation analysis completed:\n")
+cat("- Significant pairs (p ≤ 0.05):", significant_pairs, "\n")
+cat("- Scatter plots saved to Results directory\n")
+```
+
+## Generate Correlation Heatmap
+
+```{r correlation-heatmap, fig.width=10, fig.height=10}
+# Create indicator matrix for significance
+indicator_matrix <- ifelse(correlation_pvalues < 0.05 | is.na(correlation_pvalues), 1, 0.3)
+heatmap_mat_indicator <- correlation.tst * indicator_matrix
+
+cols <- colorRampPalette(c("#528ad0", "white", "#cb438d"))(101)
+
+alph_non_signaficant <- pheatmap(
+  heatmap_mat_indicator,
+  color = cols,
+  breaks = seq(-1, 1, length.out = length(cols) + 1),
+  na_col = "#ffffff",
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  show_rownames = TRUE,
+  show_colnames = TRUE,
+  main = "Correlation Matrix (Significant Correlations Highlighted)"
+)
+
+
+# Display the heatmap
+print(alph_non_signaficant)
+
+```
+
+## Correlation Results Summary
+
+```{r correlation-summary}
+# Create summary of significant correlations
+sig_correlations <- data.frame()
+for (i in seq_len(nrow(correlation_pvalues))) {
+  for (j in seq_len(ncol(correlation_pvalues))) {
+    if (i != j && !is.na(correlation_pvalues[i, j]) && correlation_pvalues[i, j] <= 0.05) {
+      sig_correlations <- rbind(sig_correlations, data.frame(
+        Variable1 = rownames(correlation_pvalues)[i],
+        Variable2 = colnames(correlation_pvalues)[j],
+        Correlation = round(correlation.tst[i, j], 4),
+        P_value = round(correlation_pvalues[i, j], 4)
+      ))
+    }
+  }
+}
+
+if(nrow(sig_correlations) > 0) {
+  cat("Significant correlations found:\n")
+  DT::datatable(sig_correlations, 
+                caption = "Significant correlations (p ≤ 0.05)",
+                options = list(pageLength = 10, scrollX = TRUE)) %>%
+    DT::formatRound(columns = c("Correlation", "P_value"), digits = 4)
+} else {
+  cat("No significant correlations found at p ≤ 0.05\n")
+}
+```
+
+# Files Generated
+
+```{r files}
+cat("=== OUTPUT FILES (ternary / correlation) ===\n")
+output_files <- c(
+  "Figure_5C_5D_SuppFig7C_Comprehensive_Ternary_Plots.pdf",
+  "SuppFig7_LMP1_correlation_heatmap.pdf"
+)
+
+for (f in output_files) {
+  fp <- file.path(results_path, f)
+  cat(if (file.exists(fp)) "✓" else "✗", f, "\n")
+}
+
+# Count scatter plots
+scatter_files <- list.files(results_path, pattern = "SuppFig7_scatterplot_.*\\.pdf", full.names = FALSE)
+cat("✓ Scatter plots generated:", length(scatter_files), "files\n")
+
+cat("\nAll results saved to:", results_path, "\n")
+```
+
+```{r session}
+sessionInfo()
+```
+---
+
+**Analysis completed successfully!** 
+
+This comprehensive analysis generated all figures for Figure 5 and Supplementary Figure 7, including:
+- Pathway enrichment heatmaps for CD4T cells and macrophages
+- Ternary plots showing spatial correlations between cell types
+- Correlation analysis between immune dysfunction markers and EBV status
+- Interactive visualizations and statistical summaries
+
+
+
+
+
+
+
