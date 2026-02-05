@@ -66,7 +66,7 @@ An overview of code in `src`. Scripts in this folder contain the preprocessing s
 
 
 
-## SGCC (The codes are in src/SGCC_code for R users: version 4.4.0)
+## SGCC
 
 ### R Package Documentation
 
