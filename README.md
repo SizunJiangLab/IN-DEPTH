@@ -33,7 +33,7 @@ An overview of code in `src`. Scripts in this folder contain the preprocessing s
 
 | Folder name                            | Description                                             |
 |----------------------------------------|---------------------------------------------------------|
-| 01_figure_1_CODEXonly_vs_postCODEX         | Code for the correlation analysis in figure1 1.          |
+| 01_figure_1_CODEXonly_vs_postCODEX         | Code for the correlation analysis in figure 1.          |
 | 02_figure_2_CODEX_GeoMx_Tonsil_run                            | Pipeline for proteomics data preprocessing and analysis in figure 2.|
 | 04_figure_4_CODEX_GeoMMx                | Pipeline for proteomics data preprocessing and analysis in figure 4. |
 | 05_figure_5_CODEX_GeoMx_analysis                | Pipeline for transcriptomics data preprocessing and analysis in figure 5. |
