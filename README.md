@@ -61,7 +61,7 @@ An overview of code in `src`. Scripts in this folder contain the preprocessing s
 | 04_figure_4_CODEX_GeoMMx                | Pipeline for proteomics data preprocessing and analysis in figure 4. |
 | 05_figure_5_CODEX_GeoMx_analysis                | Pipeline for transcriptomics data preprocessing and analysis in figure 5. |
 | 05_figure_5_SGCC           | Pipeline for SGCC analysis in figure 5. |
-| 06_figure_6_CODEX_pipeline           | Pipeline for proteomics data preprocessing and analysis in figure 6. |
+| 06_figure_6_CODEX_pipeline           | Pipeline for proteomics data preprocessing and analysis in figure 6. The `notebook/` folder contains the python notebook to perform the analysis for figure 6B.|
 | 06_figure_6_scSGCC         | Pipeline for scSGCC analysis in figure 6. |
 
 
