@@ -33,20 +33,20 @@ An overview of the purpose of different scripts to reproduce the figures in the 
 
 | File Name                              | Description                                             |
 |----------------------------------------|---------------------------------------------------------|
-| `paper_scripts/01_figure1.R`                 | Code for plots in figure 1                              |
-| `paper_scripts/02_figure2.Rmd`                         | Code for plots and analyses in figure 2                 |
-| `paper_scripts/02_figure2E_supp2EFG.Rmd`               | Code for plots and analyses in figure 2E and supplementary figure 2EFG |
-| 02_figure2F_cNMF.ipynb                 | Code for running cNMF in figure 2F                      |
-| 02_figure2C_and_SuppFig2H.R            | Code for plots in figure 2C and supplementary figure 2H |
-| 03_figure3D_and_SuppFig3D.R            | Code for plots in figure 3D and supplementary figure 3D |
-| 03_figure3E_and_SuppFig3G.R            | Code for plots in figure 3E and supplementary figure 3G |
-| 03_SuppFig3A&B.R                       | Code for supplementary figures 3A and 3B                |
-| 03_SuppFig3C.R                         | Code for supplementary figure 3C                        |
-| 04_figure4_4G&J.Rmd                    | Code for plots in figure 4G and 4J                      |
-| 04_figure4_suppFig6.Rmd                | Code for plots in figure 4 and supplementary figure 6   |
-| 05_figure5A&B_SuppFig7A&B_half.R       | Code for plots in figure 5A, B and supplementary figures 7A, B (half portion) |
-| 05_figure5A&B&C&D_SuppFig7A&B.R        | Code for plots in figure 5A, B, C, D and supplementary figures 7A, B |
-| 05_figure5E.R                          | Code for plots in figure 5E                             |
+| `paper_figures/01_figure1.R`                 | Code for plots in figure 1                              |
+| `paper_figures/02_figure2.Rmd`                         | Code for plots and analyses in figure 2                 |
+| `paper_figures/02_figure2E_supp2EFG.Rmd`               | Code for plots and analyses in figure 2E and supplementary figure 2EFG |
+| `paper_figures02_figure2F_cNMF.ipynb`                 | Code for running cNMF in figure 2F                      |
+| `paper_figures02_figure2C_and_SuppFig2H.R`            | Code for plots in figure 2C and supplementary figure 2H |
+| `paper_figures03_figure3D_and_SuppFig3D.R`            | Code for plots in figure 3D and supplementary figure 3D |
+| `paper_figures03_figure3E_and_SuppFig3G.R`            | Code for plots in figure 3E and supplementary figure 3G |
+| `paper_figures03_SuppFig3A&B.R`                       | Code for supplementary figures 3A and 3B                |
+| `paper_figures03_SuppFig3C.R`                        | Code for supplementary figure 3C                        |
+| `paper_figures04_figure4_4G&J.Rmd`                    | Code for plots in figure 4G and 4J                      |
+| `paper_figures04_figure4_suppFig6.Rmd`                | Code for plots in figure 4 and supplementary figure 6   |
+| `paper_figures05_figure5A&B_SuppFig7A&B_half.R`       | Code for plots in figure 5A, B and supplementary figures 7A, B (half portion) |
+| `paper_figures05_figure5A&B&C&D_SuppFig7A&B.R`        | Code for plots in figure 5A, B, C, D and supplementary figures 7A, B |
+| `paper_figures05_figure5E.R `                         | Code for plots in figure 5E                             |
 
 
 
