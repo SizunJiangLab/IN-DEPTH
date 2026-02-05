@@ -2,9 +2,20 @@
 
 ![overview](https://github.com/SizunJiangLab/IN-DEPTH/blob/main/docs/assets/images/overview.png)
 
+===
+
 ## Abstract
 
 The advent of spatial transcriptomics and spatial proteomics has enabled profound insights into tissue organization, however, these technologies remain largely independent, and emerging same slide multi-omics approaches are limited in plex, spatial resolution, and integrative analytics. We introduce <ins>***IN-situ DEtailed Phenotyping To High-resolution transcriptomics (IN-DEPTH)***</ins>, a streamlined, resource-efficient, and commercially platform-compatible workflow that uses single-cell spatial proteomics-derived imaging to guide transcriptomic capture on the same slide without RNA signal loss. To integrate modalities beyond domain- or niche-level mapping, we developed Spectral Graph Cross-Correlation (SGCC), an integrated proteomic-transcriptomic framework that resolves spatially coordinated functional state changes across interacting cell populations. Applied to diffuse large B-cell lymphoma (DLBCL), IN-DEPTH and SGCC enabled stepwise discovery from multicellular comparisons of Epstein–Barr virus (EBV)-positive and EBV-negative tumors to single-cell analyses revealing coordinated tumor–macrophage–CD4 T-cell remodeling. This approach identified enrichment of immunosuppressive C1Q macrophage polarization and CD4 T-cell dysfunction and further localized these programs to viral oncoprotein LMP1-driven tumor states and a candidate IL-27–STAT3 signaling axis. Collectively, IN-DEPTH enables scalable spatial multi-omics to uncover clinically relevant microenvironmental mechanisms.
+
+---
+
+
+## Tutorials
+
+
+---
+
 ## Script for figures
 
 An overview of the purpose of different scripts in `paper_figures`.
@@ -27,6 +38,8 @@ An overview of the purpose of different scripts in `paper_figures`.
 | 05_figure5A&B&C&D_SuppFig7A&B.R        | Code for plots in figure 5A&B&C&D and supplementary figures 7A&B |
 | 05_figure5E.R                          | Code for plots in figure 5E                             |
 
+---
+
 ## Overview of code
 
 An overview of code in `src`. Scripts in this folder contain the preprocessing steps used to generate input data for scripts in `paper_figures`.
@@ -41,6 +54,7 @@ An overview of code in `src`. Scripts in this folder contain the preprocessing s
 | 06_figure_6_CODEX_pipeline           | Pipeline for proteomics data preprocessing and analysis in figure 6. |
 | 06_figure_6_scSGCC         | Pipeline for scSGCC analysis in figure 6. |
 
+---
 
 ## SGCC (The codes are in src/SGCC_code for R users: version 4.4.0)
 
