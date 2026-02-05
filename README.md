@@ -13,7 +13,9 @@ The advent of spatial transcriptomics and spatial proteomics has enabled profoun
 
 ## Tutorials
 
-- ![Experiment Protocols](https://sizunjianglab.github.io/IN-DEPTH/protocols/)
+- [Experiment Protocols](https://sizunjianglab.github.io/IN-DEPTH/protocols/): Detailed Protocols for performing IN-DEPTH on various proteomics and transcriptomics platforms.
+- [Data Integration Tutorials](https://github.com/SizunJiangLab/IN-DEPTH/blob/tutorial/tutorial/indepth_codex_geomx.ipynb): Detailed tutorials on integrating proteomics and transcriptomics data via image registration. 
+- [SGCC Tutorial](): Detailed tutorials on SGCC.
 
 
 
