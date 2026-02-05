@@ -19,6 +19,12 @@ The advent of spatial transcriptomics and spatial proteomics has enabled profoun
 
 
 
+## Copyright & Licence
+
+The IN-DEPTH codebase and data are released to the academic community for non-commercial academic research only. **Any commercial research use, integration into commercial products or services requires prior approvals.**
+
+
+
 
 ## Script for figures
 
@@ -60,7 +66,7 @@ An overview of code in `src`. Scripts in this folder contain the preprocessing s
 
 
 
-## SGCC (The codes are in src/SGCC_code for R users: version 4.4.0)
+## SGCC
 
 ### R Package Documentation
 
