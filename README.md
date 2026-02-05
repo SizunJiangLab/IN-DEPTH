@@ -44,8 +44,8 @@ An overview of the purpose of different scripts in `paper_figures`.
 | 03_SuppFig3C.R                         | Code for supplementary figure 3C                        |
 | 04_figure4_4G&J.Rmd                    | Code for plots in figure 4G and 4J                      |
 | 04_figure4_suppFig6.Rmd                | Code for plots in figure 4 and supplementary figure 6   |
-| 05_figure5A&B_SuppFig7A&B_half.R       | Code for plots in figure 5A&B and supplementary figures 7A&B (half portion) |
-| 05_figure5A&B&C&D_SuppFig7A&B.R        | Code for plots in figure 5A&B&C&D and supplementary figures 7A&B |
+| 05_figure5A&B_SuppFig7A&B_half.R       | Code for plots in figure 5A, B and supplementary figures 7A, B (half portion) |
+| 05_figure5A&B&C&D_SuppFig7A&B.R        | Code for plots in figure 5A, B, C, D and supplementary figures 7A, B |
 | 05_figure5E.R                          | Code for plots in figure 5E                             |
 
 
