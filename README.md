@@ -28,14 +28,14 @@ The IN-DEPTH codebase and data are released to the academic community for non-co
 
 ## Script for figures
 
-An overview of the purpose of different scripts in `paper_figures`.
+An overview of the purpose of different scripts to reproduce the figures in the manuscript.
 
 
 | File Name                              | Description                                             |
 |----------------------------------------|---------------------------------------------------------|
-| 01_figure1.R                           | Code for plots in figure 1                              |
-| 02_figure2.Rmd                         | Code for plots and analyses in figure 2                 |
-| 02_figure2E_supp2EFG.Rmd               | Code for plots and analyses in figure 2E and supplementary figure 2EFG |
+| `paper_scripts/01_figure1.R`                 | Code for plots in figure 1                              |
+| `paper_scripts/02_figure2.Rmd`                         | Code for plots and analyses in figure 2                 |
+| `paper_scripts/02_figure2E_supp2EFG.Rmd`               | Code for plots and analyses in figure 2E and supplementary figure 2EFG |
 | 02_figure2F_cNMF.ipynb                 | Code for running cNMF in figure 2F                      |
 | 02_figure2C_and_SuppFig2H.R            | Code for plots in figure 2C and supplementary figure 2H |
 | 03_figure3D_and_SuppFig3D.R            | Code for plots in figure 3D and supplementary figure 3D |
