@@ -33,12 +33,13 @@ An overview of code in `src`. Scripts in this folder contain the preprocessing s
 
 | Folder name                            | Description                                             |
 |----------------------------------------|---------------------------------------------------------|
-| CODEX_GeoMX analysis for DLBCL         | Code for transcriptomics analysis in figure 5.           |
-| CODEX_GeoMx                            | Pipeline for proteomics data preprocessing and analysis in figure 4.|
-| CODEX_GeoMMx_Tonsil_run                | Pipeline for proteomics data preprocessing and analysis in figure 2. |
-| Revision_CODEX_pipeline                | Pipeline for proteomics data preprocessing and analysis in figure 6. |
-| CODEXonly_vs_postCODEX           |  |
-| SGCC_code           | Code for SGCC |
+| 01_figure_1_CODEXonly_vs_postCODEX         | Code for the correlation analysis in figure1 1.          |
+| 02_figure_2_CODEX_GeoMx_Tonsil_run                            | Pipeline for proteomics data preprocessing and analysis in figure 2.|
+| 04_figure_4_CODEX_GeoMMx                | Pipeline for proteomics data preprocessing and analysis in figure 4. |
+| 05_figure_5_CODEX_GeoMx_analysis                | Pipeline for transcriptomics data preprocessing and analysis in figure 5. |
+| 05_figure_5_SGCC           | Pipeline for SGCC analysis in figure 5. |
+| 06_figure_6_CODEX_pipeline           | Pipeline for proteomics data preprocessing and analysis in figure 6. |
+| 06_figure_6_scSGCC         | Pipeline for scSGCC analysis in figure 6. |
 
 
 ## SGCC (The codes are in src/SGCC_code for R users: version 4.4.0)
