@@ -12,7 +12,7 @@ The advent of spatial transcriptomics and spatial proteomics has enabled profoun
 - [Data Integration Tutorials](https://github.com/SizunJiangLab/IN-DEPTH/blob/tutorial/tutorial/indepth_codex_geomx.ipynb): Detailed tutorials on integrating proteomics and transcriptomics data via image registration.
 - [SGCC Tutorial](tutorial/sgcc_tutorial.md): R package documentation, installation instructions, and a full functions overview.
 
-## Copyright & Licence
+## Copyright & License
 
 The IN-DEPTH codebase and data are released to the academic community for non-commercial academic research only. **Any commercial research use, integration into commercial products or services requires prior approvals.**
 
