@@ -3,8 +3,6 @@ main:
     url: /
   - title: "Protocols"
     url: /protocols/
-  - title: "Data"
-    url: /demo/
   - title: "Tutorials"
     url: /tutorials/
   - title: '<i class="fab fa-github"></i>'

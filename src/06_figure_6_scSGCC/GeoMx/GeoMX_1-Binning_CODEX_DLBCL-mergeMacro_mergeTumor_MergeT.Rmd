@@ -1,0 +1,402 @@
+---
+title: "DLBCL Spatial Binning Analysis: CODEX Data Processing and SGCC Calculation"
+subtitle: "Merged Macrophage, Tumor, and T Cell Spatial Correlation Analysis"
+author: "BioGSP Package"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    theme: flatly
+    df_print: paged
+  pdf_document:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{DLBCL Binning CODEX Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      fig.width = 12, fig.height = 8)
+```
+
+# Introduction
+
+This analysis performs spatial binning analysis on DLBCL (Diffuse Large B-Cell Lymphoma) CODEX data to calculate Spatial Gene Co-localization Correlation (SGCC) scores. The workflow includes:
+
+- **Data preprocessing**: Loading and cleaning CODEX spatial data
+- **Cell type mapping**: Standardizing cell type annotations (merging Macrophage subtypes, Tumor subtypes, T cell subtypes)
+- **Spatial binning**: Creating 60x60 grids for each ROI and calculating cell proportions
+- **SGCC calculation**: Computing spatial correlations between cell type pairs
+- **Visualization**: Generating heatmaps and spatial plots
+
+The analysis focuses on merged cell types:
+- **Macrophages (Macro)**: M1 + M2 macrophages
+- **Tumor cells**: All tumor cell subtypes merged
+- **T cells**: CD4T and CD8T cells
+
+# Setup and Data Loading
+
+## Load Required Libraries
+
+```{r load-libraries}
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(cowplot)
+library(standR)
+library(SingleCellExperiment)
+library(SpatialExperiment)
+library(GSVA)
+library(readxl)
+library(utils)
+library(reshape2)
+library(Matrix.utils)
+library(ComplexHeatmap)
+library(circlize)
+library(pheatmap)
+library(knitr)
+library(DT)
+library(edgeR)
+library(BioGSP)
+library(Matrix)
+library(igraph)
+library(RANN)
+library(RSpectra)
+library(scales)
+
+# Set global paths (matching .R file)
+wdpath <- "/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Data/"
+results_path <- "/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Results"
+loadingfunction_wdpath <- "/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Code/src/"
+
+# Create results directory if it doesn't exist
+if (!dir.exists(results_path)) {
+  dir.create(results_path, recursive = TRUE)
+}
+
+cat("Libraries loaded successfully!\n")
+cat("Results will be saved to:", results_path, "\n")
+```
+
+## Load Custom Functions
+
+```{r load-functions}
+# Source spatial analysis functions
+source(file.path(loadingfunction_wdpath, "1-Pathway_validation_DLBCL_preload_function.R"))
+source(file.path(loadingfunction_wdpath, "2-rank_SGCC_Impulse_preload_function.R"))
+source(file.path(loadingfunction_wdpath, "3-WithinCrossDomainTableAndVisualization_preload_function.R"))
+
+cat("Custom functions loaded successfully!\n")
+```
+
+## Load CODEX Position Data (matching .R file approach)
+
+```{r load-codex-data}
+# Load CODEX position data (matching .R file)
+My_CODEXposition <- read.csv(file.path(wdpath,"SGCC_relevant_analysis","DLBCL_ROIlevel_annotation.csv"))
+
+cat("CODEX data loaded:\n")
+cat("- ROI position dimensions:", dim(My_CODEXposition), "\n")
+cat("- First 5 rows:\n")
+print(My_CODEXposition[1:5,])
+cat("- Annotation table:\n")
+print(table(My_CODEXposition$Annotation))
+cat("- Core names:\n")
+print(table(My_CODEXposition$coreName))
+```
+
+## Filter and Process Data (matching .R file approach)
+
+```{r process-data}
+# Remove samples (matching .R file)
+My_CODEXposition <- My_CODEXposition[My_CODEXposition$coreName != "Rochester_TonsilA" & My_CODEXposition$coreName != "DFCI_Tonsil1",]
+
+cat("Data filtering completed:\n")
+cat("- Remaining samples after filtering:", length(unique(My_CODEXposition$coreName)), "\n")
+cat("- Total cells after filtering:", nrow(My_CODEXposition), "\n")
+```
+
+# Data Preprocessing
+
+## Cell Type Mapping for DLBCL Analysis (matching .R file)
+
+```{r cell-type-mapping}
+# Create mapping table (matching .R file)
+mapping_table <- data.frame(
+  SegmentLabel = c("CD4mem", "CD4naive", "CD8mem", "CD8naive", "DC", "Endothelial",
+                   "M1", "M2", "Neutrophil", "Other", "Treg", "Tumor", "TumorBCL2",
+                   "TumorBCL6", "TumorMyc", "TumorOther"),
+  Annotation = c("CD4mem", "CD4naive", "CD8mem", "CD8naive", "DC", "Endothelial",
+                 "M1", "M2", "Neutrophil", "Other", "Treg", "Other Tumor", "Tumor BCL2",
+                 "Tumor BCL6", "Tumor Myc", "Other Tumor"),
+  MergedTumor = c("CD4T", "CD4T", "CD8T", "CD8T", "DC", "Endothelial",
+                  "Macro", "Macro", "Neutrophil", "Other", "Treg", "Tumor", "Tumor",
+                  "Tumor", "Tumor", "Tumor")
+)
+
+# Apply mapping to position data
+My_CODEXposition_merge <- left_join(My_CODEXposition, y = mapping_table, by = "Annotation")
+
+# Check mapping results
+cat("Mapping results:\n")
+print(table(My_CODEXposition_merge$MergedTumor, My_CODEXposition_merge$Annotation))
+
+# Create color mapping (matching .R file)
+color_mapping <- data.frame(
+  MergedTumor = c("CD4T","CD8T" , "DC","Endothelial","Macro",
+                  "Neutrophil","Treg","Other","Tumor"),
+  Color = c("#5cb259","#FF7600", "#ab3fa0", "#5A5AB7","#8c549c",
+            "#2182C2","#AD7442","#E92C7C","#da3a38"))
+
+# Create named vector for color mapping
+color_mapping_vector <- setNames(color_mapping$Color, color_mapping$MergedTumor)
+
+# Split data by coreName for processing
+My_CODEXposition_list <- split(My_CODEXposition_merge, ~coreName)
+
+cat("Cell type mapping completed:\n")
+cat("- Original cell types:", length(unique(My_CODEXposition_merge$Annotation)), "\n")
+cat("- Merged cell types:", length(unique(My_CODEXposition_merge$MergedTumor)), "\n")
+cat("- Number of samples:", length(My_CODEXposition_list), "\n")
+print(table(My_CODEXposition_merge$MergedTumor))
+cat("\nSample dimensions:\n")
+print(sapply(My_CODEXposition_list, dim))
+```
+
+
+## Prepare Data for SGCC Analysis
+
+```{r prepare-sgcc-data}
+# Set spatial binning dimensions (matching .R file)
+x_border <- 60
+y_border <- 60
+
+# Create base grid for SGCC calculation
+base_data <- expand.grid(x = 1:x_border, y = 1:x_border)
+
+# Define main cell types for analysis (matching .R file)
+main_cell_types <- c("Macro", "CD4T", "CD8T", "Tumor")
+cellpairs <- combn(main_cell_types, 2)
+cellcombination.name <- apply(cellpairs, 2, function(x) paste(x, collapse = "_"))
+
+cat("SGCC analysis preparation:\n")
+cat("- Grid dimensions:", x_border, "x", y_border, "=", x_border * y_border, "bins\n")
+cat("- Cell type pairs for analysis:\n")
+print(cellcombination.name)
+cat("- Number of samples:", length(My_CODEXposition_list), "\n")
+
+```
+
+# Spatial Binning and SGCC Calculation
+
+## Initialize SGWT Analysis (matching .R file methodology)
+
+```{r initialize-sgwt}
+# Initialize SGCC results matrix
+SGCC_matrix <- matrix(NA, nrow = dim(cellpairs)[2], ncol = length(My_CODEXposition_list))
+rownames(SGCC_matrix) <- cellcombination.name
+colnames(SGCC_matrix) <- names(My_CODEXposition_list)
+
+# Prepare signal data for SGCC analysis
+all_signals <- list()
+signal_names <- c()
+
+cat("SGWT initialization:\n")
+cat("- SGCC matrix dimensions:", dim(SGCC_matrix), "\n")
+cat("- Cell pairs:", nrow(SGCC_matrix), "\n")
+cat("- Samples:", ncol(SGCC_matrix), "\n")
+```
+
+## Create Signal Data for SGWT (matching .R file)
+
+```{r create-signals}
+# Function to create signal data for a specific sample and cell type
+create_signal_data <- function(binned_data, sample_name, cell_type) {
+  # Filter data for specific sample and cell type
+  signal_data <- binned_data %>%
+    filter(MergedTumor == cell_type) %>%
+    select(x_bin, y_bin, cell_proportion)
+
+  # Create full grid and merge with signal data
+  full_signal <- base_data %>%
+    left_join(signal_data, by = c("x" = "x_bin", "y" = "y_bin")) %>%
+    mutate(signal_value = ifelse(is.na(cell_proportion), 0, cell_proportion)) %>%
+    select(x, y, signal_value)
+
+  return(full_signal$signal_value)
+}
+
+cat("Signal creation function defined.\n")
+```
+
+## Process All Samples and Create Signals (matching .R file)
+
+```{r process-samples-signals}
+# Create signals for all samples and cell types
+for (i in names(My_CODEXposition_list)){
+  sample_name <- i
+  data <- My_CODEXposition_list[[sample_name]]
+
+  # Create 3600 bins (60x60 grid)
+  x_bins <- x_border
+  y_bins <- x_border
+  data <- data %>%
+    mutate(
+      x_bin = cut(X_cent_fusion, breaks = x_bins, labels = FALSE),
+      y_bin = cut(Y_cent_fusion, breaks = y_bins, labels = FALSE)
+    )
+
+  # Count the number of cells of each type in each bin
+  bin_counts <- data %>%
+    group_by(x_bin, y_bin, MergedTumor) %>%
+    summarise(cell_count = n(), .groups = 'drop')
+
+  # Calculate the total number of cells of each type
+  total_cells_per_type <- data %>%
+    group_by(MergedTumor) %>%
+    summarise(total_count = n(), .groups = 'drop')
+
+  # Merge total counts with bin counts
+  bin_counts <- bin_counts %>%
+    left_join(total_cells_per_type, by = "MergedTumor") %>%
+    mutate(cell_proportion = cell_count / total_count)
+
+  # Create signals for each main cell type in this sample
+  for (cell_type in main_cell_types) {
+    # Check if this cell type exists in current sample
+    if (cell_type %in% unique(bin_counts$MergedTumor)) {
+      signal_name <- paste(cell_type, sample_name, sep = "_")
+      signal_data <- create_signal_data(bin_counts, sample_name, cell_type)
+
+      # Only add if there are non-zero values
+      if (sum(signal_data) > 0) {
+        all_signals[[signal_name]] <- signal_data
+        signal_names <- c(signal_names, signal_name)
+      }
+    }
+  }
+}
+
+cat("Signal processing completed:\n")
+cat("- Total signals created:", length(signal_names), "\n")
+cat("- Signal names (first 10):", head(signal_names, 10), "\n")
+```
+
+## Initialize and Run SGWT Analysis (matching .R file)
+
+```{r run-sgwt-analysis}
+# Combine all signals into a single data frame for SGCC analysis
+combined_signal_data <- base_data
+for (signal_name in signal_names) {
+  combined_signal_data[[signal_name]] <- all_signals[[signal_name]]
+}
+
+# Initialize SGWT object with all signals
+cat("Initializing SGWT with", length(signal_names), "signals...\n")
+SG_combined <- initSGWT(
+  data.in = combined_signal_data,
+  x_col = "x",
+  y_col = "y",
+  signals = signal_names,
+  J = 4,
+  scaling_factor = 2,
+  kernel_type = "heat"
+)
+
+# Check k-band limitation
+cat("Checking k-band limitation...\n")
+kband_result <- checkKband(
+  SG = SG_combined,
+  signals = signal_names,
+  k = 20,
+  alpha = 0.05,
+  verbose = FALSE
+)
+cat("K-band limited signals:", sum(sapply(kband_result$signal_results, function(x){x$is_kband_limited})), "\n")
+
+# Build spectral graph
+cat("Building spectral graph...\n")
+SG_combined <- runSpecGraph(SG_combined, k = 400, laplacian_type = "normalized",
+                           length_eigenvalue = 400, verbose = FALSE)
+
+# Run SGWT analysis
+cat("Running SGWT analysis...\n")
+SG_combined <- runSGWT(SG_combined, verbose = FALSE)
+
+cat("SGWT initialization and analysis completed!\n")
+```
+
+## Compute SGCC for Cell Pairs (matching .R file)
+
+```{r compute-sgcc}
+# Compute SGCC for all cell pair combinations
+cat("Computing SGCC for cell pairs...\n")
+sgcc_result_list <- list()
+for (k in seq_along(cellcombination.name)){
+  tmp_cellcombination.name <- cellcombination.name[k]
+  CT1 <- strsplit(tmp_cellcombination.name,"_")[[1]][1]
+  CT2 <- strsplit(tmp_cellcombination.name,"_")[[1]][2]
+
+  for (sample_name in names(My_CODEXposition_list)) {
+    # Create signal names
+    signal1_name <- paste(CT1, sample_name, sep = "_")
+    signal2_name <- paste(CT2, sample_name, sep = "_")
+
+    # Check if both signals exist
+    if (signal1_name %in% signal_names && signal2_name %in% signal_names) {
+      # Compute SGCC
+      sgcc_result <- runSGCC(signal1_name, signal2_name, SG = SG_combined, return_parts = TRUE)
+      sgcc_result_list[[paste0(tmp_cellcombination.name,"_",sample_name)]] <- sgcc_result
+      SGCC_matrix[tmp_cellcombination.name, sample_name] <- sgcc_result$S
+
+      cat("Computed SGCC for", tmp_cellcombination.name, "in", sample_name, ": ", round(sgcc_result$S, 4), "\n")
+    }
+  }
+}
+
+similarity_plot <- visualize_similarity_xy(
+  sgcc_result_list,
+  point_size = 4,
+  add_diagonal = TRUE,
+  add_axes_lines = TRUE,
+  title = "Visualization",
+  show_labels = FALSE
+)
+print(similarity_plot)
+cat("SGCC computation completed!\n")
+cat("SGCC matrix summary:\n")
+print(summary(as.vector(SGCC_matrix)))
+write.csv(SGCC_matrix, file = file.path(results_path, "60_SGCC_matrix_DLBCL_mergeMacro_mergeTumor_mergeT.csv"), quote = FALSE)
+```
+
+
+# Session Information
+
+```{r session-info}
+sessionInfo()
+```
+
+---
+
+**Analysis completed successfully!** 
+
+This spatial binning analysis has processed DLBCL CODEX data using proper SGWT/SGCC methodology to:
+
+- **Preprocess spatial data**: Clean and standardize cell type annotations with sample filtering
+- **Perform spatial binning**: Create 60x60 grids for each sample using X_cent_fusion/Y_cent_fusion coordinates
+- **Calculate SGCC scores**: Use BioGSP package with proper SGWT implementation for spatial correlations
+- **Categorize interactions**: Analyze M-T-Tumor interaction patterns with statistical ranking
+- **Generate comprehensive results**: Create detailed analysis files and visualizations
+
+The main outputs include:
+- **SGCC matrix** (`60_SGCC_matrix_DLBCL_mergeMacro_mergeTumor_mergeT.csv`): Spatial correlation scores for all cell type pairs
+- **Detailed results** (`SGCC_detailed_results_MTTumor.csv`): Complete interaction analysis
+- **Category analysis** (`SGCC_category_means_MTTumor.csv`): M-T-Tumor interaction rankings
+- **Pair analysis** (`SGCC_pair_means_MTTumor.csv`): Cell pair correlation summaries
+
+All results are saved and ready for downstream analysis in the DLBCL spatial analysis pipeline.

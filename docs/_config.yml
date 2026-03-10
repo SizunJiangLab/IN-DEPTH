@@ -39,12 +39,20 @@ author:
       icon: "fab fa-fw fa-github"
       url: "https://github.com/SizunJiangLab"
 
+analytics:
+  provider: "google-gtag"
+  google:
+    tracking_id: "G-C19LBMLKBZ"
+    anonymize_ip: true
 
 # Collections
 collections:
   protocols:
     output: true
     permalink: /protocols/:path/
+  tutorials:
+    output: true
+    permalink: /tutorials/:path/
   # notebooks:
   #   output: true
   #   permalink: /notebooks/:path/
@@ -64,6 +72,15 @@ defaults:
       classes: wide
       sidebar:
         nav: "protocols"
+  
+  - scope:
+      path: ""
+      type: "tutorials"
+    values:
+      layout: single
+      classes: wide
+      sidebar:
+        nav: "tutorials"
   
   # - scope:
   #     path: ""

@@ -1,0 +1,417 @@
+---
+title: "DLBCL Differential Gene Expression Analysis: EBV+ vs EBV- Comparison"
+subtitle: "Merged Macrophage, Tumor, and T Cell Analysis"
+author: "BioGSP Package"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    theme: flatly
+    df_print: paged
+  pdf_document:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{DLBCL DEG Analysis EBV+ vs EBV-}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      fig.width = 12, fig.height = 8)
+```
+
+# Introduction
+
+This analysis performs differential gene expression (DEG) analysis comparing EBV+ vs EBV- samples in DLBCL (Diffuse Large B-Cell Lymphoma) data. The analysis focuses on three main cell types:
+
+- **Macrophages (Macro)**: Merged M1 and M2 macrophages
+- **CD4+ T cells (CD4T)**: Helper T cells
+- **Tumor cells**: Malignant B cells
+
+The analysis uses spatial gene co-localization correlation (SGCC) scores and incorporates batch correction using RUV (Remove Unwanted Variation) methods.
+
+# Setup and Data Loading
+
+## Load Required Libraries
+
+```{r load-libraries}
+# Set global paths
+wdpath <- "/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Data/"
+results_path <- "/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Results"
+loadingfunction_wdpath <- c("/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Code/src/")
+
+# Create results directory if it doesn't exist
+if (!dir.exists(results_path)) {
+  dir.create(results_path, recursive = TRUE)
+}
+
+# Load required libraries
+library(dplyr)
+library(Seurat)
+library(readr)
+library(tidyr)
+library(tidyverse)
+library(deldir)
+library(igraph)
+library(progress)
+library(qs)
+library(pheatmap)
+library(epitools)  # For odds ratio calculation
+library(SingleCellExperiment)
+library(knitr)
+library(DT)
+
+# Source custom functions
+source(file.path(loadingfunction_wdpath,"2-rank_SGCC_Impulse_preload_function.R"))
+source(file.path(loadingfunction_wdpath,"3-WithinCrossDomainTableAndVisualization_preload_function.R"))
+
+cat("Libraries loaded successfully!\n")
+cat("Results will be saved to:", results_path, "\n")
+```
+
+## Load SGCC Matrix and Annotation Data
+
+```{r load-data}
+# Read in SGCC matrix
+SGCC_matrix <- read.csv(file.path(results_path,"60_SGCC_matrix_DLBCL_mergeMacro_mergeTumor_mergeT.csv"), row.names = 1)
+
+cat("SGCC matrix dimensions:", dim(SGCC_matrix), "\n")
+cat("SGCC matrix preview:\n")
+print(head(SGCC_matrix[, 1:5]))
+
+# Load the ROI annotation data
+annotation <- read.csv(file.path(wdpath,"SGCC_relevant_analysis","DLBCL_ROIlevel_annotation.csv"))
+
+cat("\nOriginal annotation dimensions:", dim(annotation), "\n")
+cat("Unique annotations:", paste(unique(annotation$Annotation), collapse = ", "), "\n")
+```
+
+## Data Preprocessing
+
+```{r preprocess-data}
+# Standardize the annotations for CD8, CD4, and Tumor cells
+annotation <- annotation %>%
+  mutate(Annotation = case_when(
+    grepl("CD8", Annotation) ~ "CD8T",
+    grepl("CD4", Annotation) ~ "CD4T",
+    grepl("Tumor", Annotation) ~ "Tumor",
+    grepl("M1", Annotation) ~ "Macro",
+    grepl("M2", Annotation) ~ "Macro",
+    TRUE ~ Annotation
+  ))
+
+# Convert the matrix to a dataframe
+SGCC_df <- as.data.frame(SGCC_matrix)
+# Add a column for the cell type pairs
+SGCC_df$CellTypePair <- rownames(SGCC_matrix)
+
+# Exclude "Other" and "Neutrophil" annotations
+annotation <- annotation %>%
+  filter(!Annotation %in% c("Other", "Neutrophil"))
+
+# Exclude cores containing "Tonsil" in their names
+annotation <- annotation %>%
+  filter(!grepl("Tonsil", coreName))
+
+# Specify the selected cores
+selected_cores <- c("Rochester_4", "Rochester_6",
+                    "Rochester_7", "Rochester_9", "Rochester_11", "Rochester_12",
+                    "Rochester_13", "Rochester_14",
+                    "Rochester_15", "Rochester_16", "Rochester_17", "Rochester_18",
+                    "Rochester_19", "Rochester_21", "Rochester_23",
+                    "Rochester_25", "Rochester_TonsilA", "DFCI_2.2", "DFCI_3.2",
+                    "DFCI_4.1", "DFCI_7.1", "DFCI_8.1",
+                    "DFCI_12.1", "DFCI_13.2", "DFCI_14.1", "DFCI_15.2", "DFCI_17.1",
+                    "DFCI_18.2", "DFCI_19.2", "DFCI_22.2", "DFCI_23.2")
+
+# Filter for selected cores
+annotation <- annotation %>%
+  filter(coreName %in% selected_cores)
+
+cat("After preprocessing:\n")
+cat("Annotation dimensions:", dim(annotation), "\n")
+cat("Selected cores:", length(selected_cores), "\n")
+cat("Standardized annotations:", paste(unique(annotation$Annotation), collapse = ", "), "\n")
+```
+
+## Cell Number Summary
+
+```{r cell-summary}
+# Summarize cell number per core
+cellnumber_percore <- annotation %>%
+  # Filter only the relevant cell types
+  filter(Annotation %in% c("CD4T", "CD8T", "Macro", "Endothelial")) %>%
+  # Group by coreName and Annotation to count the number of occurrences
+  group_by(coreName, Annotation) %>%
+  summarise(cell_count = n(), .groups = 'drop') %>%
+  mutate(ROI_CT = paste0(coreName,"_",Annotation))
+
+cat("Cell number summary:\n")
+print(cellnumber_percore %>% 
+      group_by(Annotation) %>% 
+      summarise(
+        total_cells = sum(cell_count),
+        mean_per_core = mean(cell_count),
+        median_per_core = median(cell_count),
+        .groups = 'drop'
+      ))
+
+# Display cell counts per core for each cell type
+DT::datatable(cellnumber_percore, 
+              caption = "Cell counts per core and cell type",
+              options = list(pageLength = 10, scrollX = TRUE))
+```
+
+## Load Seurat Object
+
+```{r load-seurat}
+# Load the batch-corrected Seurat object
+my.seurat <- qread(file.path(wdpath,"GeoMX_batchcorrection","LogCPM-Seurat_for_DLBCL_includeTumorMergeMacro-batchcorrected-DEGvalidated.qs"))
+
+cat("Seurat object loaded successfully!\n")
+cat("Available Seurat objects:\n")
+print(names(my.seurat))
+```
+
+# Differential Gene Expression Analysis
+
+## 1. Macrophage Analysis
+
+### Setup for Macrophage DEG Analysis
+
+```{r macro-setup}
+cat("=== MACROPHAGE ANALYSIS ===\n")
+cat("Using: LogCPM_Seurat_top1000_k3_Macro_vs_Endothelial_ruv_W1_ruv_W2_ruv_W3_EBV_no_CTnumber_FALSE\n")
+
+# Setup parameters for macrophage analysis
+spe_obj <- as.SingleCellExperiment(my.seurat$Seurat_top1000_k3)
+spe_obj <- spe_obj[, spe_obj$ROI_rename %in% selected_cores]
+convariate_component <- c("ruv_W1","ruv_W2","ruv_W3")
+consider_CTnumber = FALSE
+covariate_matrix <- spe_obj@colData[,grep("ruv",colnames(spe_obj@colData))]
+
+if(is.null(dim(covariate_matrix))){
+  names(covariate_matrix) <- colnames(spe_obj)
+}
+
+cat("Macrophage analysis setup:\n")
+cat("- SPE object dimensions:", dim(spe_obj), "\n")
+cat("- Covariate components:", paste(convariate_component, collapse = ", "), "\n")
+cat("- Consider cell number:", consider_CTnumber, "\n")
+```
+
+### Run Macrophage DEG Analysis
+
+```{r macro-deg}
+# Load previous calculated SGCC score and calculate gene in CT1
+prepare_meta_output_CT1 <- prepare_meta_SGCC(spe_obj = spe_obj,
+                                             SGCC_df = SGCC_matrix,
+                                             cell_pair = "Macro_CD4",
+                                             CT.use = "Macro",
+                                             condition_name = "EBV_Indicator",
+                                             sample.drop = c("DFCI_9.1","DFCI_21.1","DFCI_11.1"),
+                                             batch.factor = "Cohort")
+
+# Run DEG analysis
+macro_results <- runDEGs_limma_fix_Time(meta_data = prepare_meta_output_CT1[[1]],
+                                        expression_matrix = prepare_meta_output_CT1[[2]],
+                                        consider_CTnumber = consider_CTnumber,
+                                        cellnumber_percore = cellnumber_percore,
+                                        time_column = "Time",
+                                        EBV_column = "Condition",  # Column for EBV status
+                                        time_fix = c(1,2,3),
+                                        logfc_threshold = 0.05,
+                                        p_val_threshold = 0.01,
+                                        covariate_ID = convariate_component,
+                                        covariate_mat = covariate_matrix)
+
+# Save results
+write.csv(macro_results, file = file.path(results_path, "Macro_EBV+_vs_EBV-.csv"))
+```
+
+### Macrophage Results Summary
+
+```{r macro-summary}
+# Display top significant genes
+macro_sig <- macro_results %>%
+  filter(P.Value < 0.01) %>%
+  arrange(P.Value) %>%
+  head(20)
+
+if(nrow(macro_sig) > 0) {
+  cat("Top 20 significant macrophage genes:\n")
+  DT::datatable(macro_sig, 
+                caption = "Top significant genes in Macrophages (EBV+ vs EBV-)",
+                options = list(pageLength = 10, scrollX = TRUE)) %>%
+    DT::formatRound(columns = c("logFC", "AveExpr", "t", "P.Value", "adj.P.Val"), digits = 4)
+} else {
+  cat("No significant genes found in macrophage analysis\n")
+}
+```
+
+## 2. CD4+ T Cell Analysis
+
+### Setup for CD4T DEG Analysis
+
+```{r cd4t-setup}
+cat("\n=== CD4+ T CELL ANALYSIS ===\n")
+cat("Using: LogCPM_Seurat_top5000_k2_CD4T_vs_Endothelial_ruv_W1_ruv_W2_EBV_yes-no_CTnumber_TRUE\n")
+
+# Setup parameters for CD4T analysis
+spe_obj <- as.SingleCellExperiment(my.seurat$Seurat_top5000_k2)
+spe_obj <- spe_obj[, spe_obj$ROI_rename %in% selected_cores]
+convariate_component <- c("ruv_W1","ruv_W2")
+consider_CTnumber = TRUE
+covariate_matrix <- spe_obj@colData[,grep("ruv",colnames(spe_obj@colData))]
+
+if(is.null(dim(covariate_matrix))){
+  names(covariate_matrix) <- colnames(spe_obj)
+}
+
+cat("CD4T analysis setup:\n")
+cat("- SPE object dimensions:", dim(spe_obj), "\n")
+cat("- Covariate components:", paste(convariate_component, collapse = ", "), "\n")
+cat("- Consider cell number:", consider_CTnumber, "\n")
+```
+
+### Run CD4T DEG Analysis
+
+```{r cd4t-deg}
+# Load previous calculated SGCC score and calculate gene in CT1
+prepare_meta_output_CT1 <- prepare_meta_SGCC(spe_obj = spe_obj,
+                                             SGCC_df = SGCC_matrix,
+                                             cell_pair = "Macro_CD4",
+                                             CT.use = "CD4T",
+                                             condition_name = "EBV_Indicator",
+                                             sample.drop = c("DFCI_9.1","DFCI_21.1","DFCI_11.1"),
+                                             batch.factor = "Cohort")
+
+# Run DEG analysis
+cd4t_results <- runDEGs_limma_fix_Time(meta_data = prepare_meta_output_CT1[[1]],
+                                       expression_matrix = prepare_meta_output_CT1[[2]],
+                                       consider_CTnumber = consider_CTnumber,
+                                       cellnumber_percore = cellnumber_percore,
+                                       time_column = "Time",
+                                       EBV_column = "Condition",  # Column for EBV status
+                                       time_fix = c(1,2,3),
+                                       logfc_threshold = 0.05,
+                                       p_val_threshold = 0.01,
+                                       covariate_ID = convariate_component,
+                                       covariate_mat = covariate_matrix)
+
+# Save results
+write.csv(cd4t_results, file = file.path(results_path, "CD4T_EBV+_vs_EBV-.csv"))
+```
+
+### CD4T Results Summary
+
+```{r cd4t-summary}
+# Display top significant genes
+cd4t_sig <- cd4t_results %>%
+  filter(P.Value < 0.01) %>%
+  arrange(P.Value) %>%
+  head(20)
+
+if(nrow(cd4t_sig) > 0) {
+  cat("Top 20 significant CD4T genes:\n")
+  DT::datatable(cd4t_sig, 
+                caption = "Top significant genes in CD4+ T cells (EBV+ vs EBV-)",
+                options = list(pageLength = 10, scrollX = TRUE)) %>%
+    DT::formatRound(columns = c("logFC", "AveExpr", "t", "P.Value", "adj.P.Val"), digits = 4)
+} else {
+  cat("No significant genes found in CD4T analysis\n")
+}
+```
+
+## 3. Tumor Cell Analysis
+
+### Setup for Tumor DEG Analysis
+
+```{r tumor-setup}
+cat("\n=== TUMOR CELL ANALYSIS ===\n")
+cat("Using: LogCPM_Seurat_top1000_k3_Tumor_vs_Endothelial_ruv_W1_EBV_no_CTnumber_FALSE\n")
+
+# Setup parameters for Tumor analysis
+spe_obj <- as.SingleCellExperiment(my.seurat$Seurat_top1000_k3)
+spe_obj <- spe_obj[, spe_obj$ROI_rename %in% selected_cores]
+convariate_component <- c("ruv_W1")
+consider_CTnumber = FALSE
+covariate_matrix <- spe_obj@colData[,grep("ruv",colnames(spe_obj@colData))]
+
+if(is.null(dim(covariate_matrix))){
+  names(covariate_matrix) <- colnames(spe_obj)
+}
+
+cat("Tumor analysis setup:\n")
+cat("- SPE object dimensions:", dim(spe_obj), "\n")
+cat("- Covariate components:", paste(convariate_component, collapse = ", "), "\n")
+cat("- Consider cell number:", consider_CTnumber, "\n")
+```
+
+### Run Tumor DEG Analysis
+
+```{r tumor-deg}
+# Load previous calculated SGCC score and calculate gene in CT1
+prepare_meta_output_CT1 <- prepare_meta_SGCC(spe_obj = spe_obj,
+                                             SGCC_df = SGCC_matrix,
+                                             cell_pair = "Macro_Tumor",
+                                             CT.use = "Tumor",
+                                             condition_name = "EBV_Indicator",
+                                             sample.drop = c("DFCI_9.1","DFCI_21.1","DFCI_11.1"),
+                                             batch.factor = "Cohort")
+
+# Run DEG analysis
+tumor_results <- runDEGs_limma_fix_Time(meta_data = prepare_meta_output_CT1[[1]],
+                                        expression_matrix = prepare_meta_output_CT1[[2]],
+                                        consider_CTnumber = consider_CTnumber,
+                                        cellnumber_percore = cellnumber_percore,
+                                        time_column = "Time",
+                                        EBV_column = "Condition",  # Column for EBV status
+                                        time_fix = c(1,2,3),
+                                        logfc_threshold = 0.05,
+                                        p_val_threshold = 0.01,
+                                        covariate_ID = convariate_component,
+                                        covariate_mat = covariate_matrix)
+
+# Save results
+write.csv(tumor_results, file = file.path(results_path, "Tumor_EBV+_vs_EBV-.csv"))
+```
+
+### Tumor Results Summary
+
+```{r tumor-summary}
+# Display top significant genes
+tumor_sig <- tumor_results %>%
+  filter(P.Value < 0.01) %>%
+  arrange(P.Value) %>%
+  head(20)
+
+if(nrow(tumor_sig) > 0) {
+  cat("Top 20 significant tumor genes:\n")
+  DT::datatable(tumor_sig, 
+                caption = "Top significant genes in Tumor cells (EBV+ vs EBV-)",
+                options = list(pageLength = 10, scrollX = TRUE)) %>%
+    DT::formatRound(columns = c("logFC", "AveExpr", "t", "P.Value", "adj.P.Val"), digits = 4)
+} else {
+  cat("No significant genes found in tumor analysis\n")
+}
+```
+
+# Session Information
+
+```{r session-info}
+sessionInfo()
+```
+
+---
+
+**Analysis completed successfully!** 
+
+This analysis identified differentially expressed genes between EBV+ and EBV- samples across three key cell types in DLBCL. The results provide insights into the molecular differences associated with EBV infection in the tumor microenvironment.
+
+
+
+

@@ -1,0 +1,423 @@
+---
+title: "DLBCL Heatmaps: Macrophage–Tumor Pathways and Virus Genes"
+subtitle: "Figure 5 and Supplementary Figure 7"
+author: "BioGSP Package"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    theme: flatly
+    df_print: paged
+  pdf_document:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{DLBCL Heatmaps Macro–Tumor}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 12, fig.height = 9)
+```
+
+# Setup and Data Loading
+
+## Load Libraries and Paths
+
+```{r libs-paths}
+# Paths
+wdpath <- "/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Data/"
+results_path <- "/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Results"
+loadingfunction_wdpath <- "/bmbl_data/yuzhou/collaborative/Sizun_lab/INDEPTH/SGCC/SGWT_results/DLBCL_GeoMX/GeoMXNew_code_data_publish/Code/src/"
+
+if (!dir.exists(results_path)) dir.create(results_path, recursive = TRUE)
+
+# Libs
+library(dplyr)
+library(GSVA)
+library(SingleCellExperiment)
+library(ComplexHeatmap)
+library(circlize)
+library(pheatmap)
+library(knitr)
+library(DT)
+
+# Source functions and gene lists
+source(file.path(loadingfunction_wdpath, "5-Preload_customized_gene_list.R"))
+source(file.path(loadingfunction_wdpath, "4-post_DEG_heatmap_visualization_preloadfunction-mergeMacroTumorT.R"))
+source(file.path(loadingfunction_wdpath, "2-rank_SGCC_Impulse_preload_function.R"))
+source(file.path(loadingfunction_wdpath, "3-WithinCrossDomainTableAndVisualization_preload_function.R"))
+
+cat("Libraries and functions loaded. Results:", results_path, "\n")
+```
+
+## Define Analysis Parameters
+
+```{r define-parameters}
+# Use Macro–Tumor for SGCC pairing
+Celltypepairs <- c("Macro", "Tumor")
+SGCC_pair <- "Macro_Tumor"
+
+cat("Analysis parameters:\n")
+cat("- Cell type 1:", Celltypepairs[[1]], "\n")
+cat("- Cell type 2:", Celltypepairs[[2]], "\n")
+cat("- SGCC pair:", SGCC_pair, "\n")
+```
+
+## Load Expression Data and Metadata
+
+```{r load-expression-data}
+# Expression matrices and metadata
+CT.Macro.exp <- list_exp_matrix_metadata[["Macro"]]
+CT.Tumor.exp <- list_exp_matrix_metadata[["Tumor"]]
+
+spe_obj_Macro <- SingleCellExperiment(assays = list(
+  counts = as.matrix(CT.Macro.exp),
+  logcounts = as.matrix(CT.Macro.exp)
+), colData = list_exp_matrix_metadata$reformedMeta)
+
+spe_obj_Tumor <- SingleCellExperiment(assays = list(
+  counts = as.matrix(CT.Tumor.exp),
+  logcounts = as.matrix(CT.Tumor.exp)
+), colData = list_exp_matrix_metadata$reformedMeta)
+
+cat("Expression data loaded:\n")
+cat("- Macro dims:", dim(CT.Macro.exp), "\n")
+cat("- Tumor dims:", dim(CT.Tumor.exp), "\n")
+```
+
+## Load SGCC Matrix and Annotation Data
+
+```{r load-sgcc-annotation}
+# Load SGCC matrix
+SGCC_matrix <- read.csv(file.path(results_path, "60_SGCC_matrix_DLBCL_mergeMacro_mergeTumor_mergeT.csv"), row.names = 1)
+SGCC_pair_vec <- SGCC_matrix[SGCC_pair, , drop = TRUE]
+
+cat("SGCC matrix loaded:\n")
+cat("- Matrix dims:", dim(SGCC_matrix), "\n")
+cat("- Focus pair:", SGCC_pair, "(non-NA:", sum(!is.na(SGCC_pair_vec)), "/", length(SGCC_pair_vec), ")\n")
+```
+
+## Process Annotation Data
+
+```{r process-annotations}
+annotation <- list_exp_matrix_metadata$annotation
+
+# Standardize annotations
+annotation <- annotation %>%
+  mutate(Annotation = case_when(
+    grepl("CD8", Annotation) ~ "CD8T",
+    grepl("CD4", Annotation) ~ "CD4T",
+    grepl("Tumor", Annotation) ~ "Tumor",
+    grepl("M1", Annotation) ~ "Macro",
+    grepl("M2", Annotation) ~ "Macro",
+    TRUE ~ Annotation
+  ))
+
+# Filter unwanted annotations and tonsil cores
+annotation <- annotation %>%
+  filter(!Annotation %in% c("Other", "Neutrophil")) %>%
+  filter(!grepl("Tonsil", coreName))
+
+cat("Unique cores after filtering:\n")
+print(unique(annotation$coreName))
+```
+
+## Define Selected Cores
+
+```{r define-cores}
+selected_cores <- c(
+  "Rochester_4", "Rochester_6", "Rochester_7", "Rochester_9",
+  "Rochester_11", "Rochester_12", "Rochester_13", "Rochester_14",
+  "Rochester_25", "Rochester_15", "Rochester_16", "Rochester_17",
+  "Rochester_18", "Rochester_19", "Rochester_21", "Rochester_23",
+  "DFCI_2.2", "DFCI_3.2", "DFCI_4.1", "DFCI_7.1", "DFCI_8.1",
+  "DFCI_12.1", "DFCI_13.2", "DFCI_15.2", "DFCI_17.1","DFCI_14.1",
+  "DFCI_18.2", "DFCI_19.2", "DFCI_22.2", "DFCI_23.2"
+)
+
+annotation <- annotation %>% filter(coreName %in% selected_cores)
+
+cat("Selected cores:", length(selected_cores), "\n")
+cat("Cores after filtering:", length(unique(annotation$coreName)), "\n")
+```
+
+## Cell Number Summary
+
+```{r cell-summary}
+cellnumber_percore <- annotation %>%
+  filter(Annotation %in% c("Macro", "Tumor", "CD4T", "CD8T", "Endothelial")) %>%
+  group_by(coreName, Annotation) %>%
+  summarise(cell_count = n(), .groups = 'drop') %>%
+  mutate(ROI_CT = paste0(coreName, "_", Annotation))
+
+summary_stats <- cellnumber_percore %>%
+  group_by(Annotation) %>%
+  summarise(
+    total_cells = sum(cell_count),
+    mean_per_core = round(mean(cell_count), 2),
+    median_per_core = median(cell_count),
+    min_per_core = min(cell_count),
+    max_per_core = max(cell_count),
+    .groups = 'drop'
+  )
+
+DT::datatable(summary_stats,
+              caption = "Cell count statistics by annotation",
+              options = list(pageLength = 10, scrollX = TRUE))
+```
+
+## Sample Filtering
+
+```{r sample-filtering}
+# Filter samples based on cell number differences
+filtered_summary <- filter_samples_summary(
+  annotation,
+  max_diff = 1,
+  cell_types = c(Celltypepairs[[1]], Celltypepairs[[2]]),
+  tumor_annotation = "Tumor",
+  tumor_upper = 1, 
+  tumor_lower = 0,
+  logfc = 10
+)
+
+# Identify samples to drop
+drop.samples <- setdiff(spe_obj_Macro$ROI_rename, selected_cores)
+
+cat("Samples to drop:", length(drop.samples), "\n")
+if(length(drop.samples) > 0) {
+  cat("Dropped samples:", paste(head(drop.samples, 10), collapse = ", "), "\n")
+  if(length(drop.samples) > 10) cat("... and", length(drop.samples) - 10, "more\n")
+}
+```
+
+# SGCC Analysis and Metadata Preparation
+
+## Prepare SGCC Metadata for Both Cell Types
+
+```{r prepare-sgcc-metadata}
+# Prepare metadata for Macro
+prepare_meta_output_Macro <- prepare_meta_SGCC(
+  spe_obj = spe_obj_Macro,
+  SGCC_df = SGCC_matrix,
+  cell_pair = c(SGCC_pair),
+  CT.use = "Macro",
+  condition_name = "EBV_Indicator",
+  sample.drop = c(drop.samples),
+  batch.factor = "Cohort"
+)
+
+# Prepare metadata for Tumor
+prepare_meta_output_Tumor <- prepare_meta_SGCC(
+  spe_obj = spe_obj_Tumor,
+  SGCC_df = SGCC_matrix,
+  cell_pair = c(SGCC_pair),
+  CT.use = "Tumor",
+  condition_name = "EBV_Indicator",
+  sample.drop = c(drop.samples),
+  batch.factor = "Cohort"
+)
+
+cat("SGCC metadata prepared:\n")
+cat("- Macro samples:", ncol(prepare_meta_output_Macro[[2]]), "\n")
+cat("- Tumor samples:", ncol(prepare_meta_output_Tumor[[2]]), "\n")
+```
+
+## Create Enhanced Metadata
+
+```{r create-enhanced-metadata}
+# Create enhanced metadata for Macro
+metaoutput_Macro <- spe_obj_Macro@colData %>%
+  as.data.frame() %>%
+  select(ROI_CT, virus_loading, virus_loading_InTumor, total_cells, total_tumor_cells,
+         Tumor_other_cell, Tumor_BCL2_cell, Tumor_BCL6_cell, LMP1_g_tumor,
+         Tumor_Myc_cell, LMP1_filtered_mean, LMP1_positive_numebr, LMP1_pct,
+         m1_pct, m2_pct, m1_odds, m2_odds, PD1_CD4T, PDL1_macro, Tox_CD4T, 
+         LAG3_CD4T, HLADR_macro, dysfunction_score_protein) %>%
+  right_join(prepare_meta_output_Macro[[1]], by = "ROI_CT") %>%
+  mutate(
+    SGCC_cat = case_when(
+      Time == 1 ~ "SGCC low",
+      Time == 2 ~ "SGCC mediate", 
+      Time == 3 ~ "SGCC high",
+      TRUE ~ NA_character_
+    ),
+    EBV_status = case_when(
+      Condition == "case" ~ "EBV+",
+      Condition == "control" ~ "EBV-"
+    )
+  )
+
+# Create enhanced metadata for Tumor
+metaoutput_Tumor <- spe_obj_Tumor@colData %>%
+  as.data.frame() %>%
+  select(ROI_CT, virus_loading, virus_loading_InTumor, total_cells, total_tumor_cells,
+         Tumor_other_cell, Tumor_BCL2_cell, Tumor_BCL6_cell, LMP1_g_tumor,
+         Tumor_Myc_cell, LMP1_filtered_mean, LMP1_positive_numebr, LMP1_pct,
+         m1_pct, m2_pct, m1_odds, m2_odds, PD1_CD4T, PDL1_macro, Tox_CD4T, 
+         LAG3_CD4T, HLADR_macro, dysfunction_score_protein) %>%
+  right_join(prepare_meta_output_Tumor[[1]], by = "ROI_CT") %>%
+  mutate(
+    SGCC_cat = case_when(
+      Time == 1 ~ "SGCC low",
+      Time == 2 ~ "SGCC mediate",
+      Time == 3 ~ "SGCC high", 
+      TRUE ~ NA_character_
+    ),
+    EBV_status = case_when(
+      Condition == "case" ~ "EBV+",
+      Condition == "control" ~ "EBV-"
+    )
+  )
+
+cat("Enhanced metadata created:\n")
+cat("- Macro metadata rows:", nrow(metaoutput_Macro), "\n")
+cat("- Tumor metadata rows:", nrow(metaoutput_Tumor), "\n")
+cat("- EBV+ samples:", sum(metaoutput_Macro$EBV_status == "EBV+", na.rm = TRUE), "\n")
+cat("- EBV- samples:", sum(metaoutput_Macro$EBV_status == "EBV-", na.rm = TRUE), "\n")
+```
+
+# GSVA Pathway Analysis
+
+## Run GSVA for Macrophages
+
+```{r gsva-macro-analysis}
+# Set up GSVA parameters for Macrophages
+SetGSVAPar_Macro <- gsvaParam(
+  exprData = prepare_meta_output_Macro[[2]],
+  geneSets = functionalenrichment[grep(paste0("^", "Macro"), names(functionalenrichment))],
+  minSize = 3, 
+  maxSize = 100,
+  kcdf = "Gaussian"
+)
+
+# Run GSVA analysis
+gsva_results_Macro <- gsva(SetGSVAPar_Macro, verbose = TRUE)
+GSVA_pathwayname_Macro <- rownames(gsva_results_Macro)
+
+cat("GSVA analysis for Macrophages completed:\n")
+cat("- Number of pathways:", nrow(gsva_results_Macro), "\n")
+cat("- Pathways analyzed:", paste(GSVA_pathwayname_Macro, collapse = ", "), "\n")
+```
+
+## Run GSVA for Tumor
+
+```{r gsva-tumor-analysis}
+# Set up GSVA parameters for Tumor
+SetGSVAPar_Tumor <- gsvaParam(
+  exprData = prepare_meta_output_Tumor[[2]],
+  geneSets = functionalenrichment[grep(paste0("^", "Tumor"), names(functionalenrichment))],
+  minSize = 3, 
+  maxSize = 400,
+  kcdf = "Gaussian"
+)
+
+# Run GSVA analysis
+gsva_results_Tumor <- gsva(SetGSVAPar_Tumor, verbose = TRUE)
+GSVA_pathwayname_Tumor <- rownames(gsva_results_Tumor)
+
+cat("GSVA analysis for Tumor completed:\n")
+cat("- Number of pathways:", nrow(gsva_results_Tumor), "\n")
+cat("- Pathways analyzed:", paste(GSVA_pathwayname_Tumor, collapse = ", "), "\n")
+```
+
+# GSVA Pathway Heatmaps
+
+## Macrophage GSVA Heatmap
+
+```{r macro-heatmap, fig.width=12, fig.height=10}
+# Create macrophage pathway heatmap
+Genelist_Macro <- intersect(Macro_customized_M1M2, rownames(prepare_meta_output_Macro[[2]]))
+
+Macro_heatmap_pathway <- create_complex_heatmap_FixEBV(
+  gene_list = NA,
+  pathway_matrix = gsva_results_Macro,
+  scale_color_ht = 2,
+  expr_data = prepare_meta_output_Macro[[2]],
+  meta_data = metaoutput_Macro,
+  cluster_rows = TRUE,
+  cluster_columns = FALSE
+)
+
+# Display the heatmap
+draw(Macro_heatmap_pathway)
+
+# Save the heatmap
+pdf(file.path(results_path, "Figures_5A_5B_SuppFig7A_Macrophage-Tumor-Macrophage_heatmap.pdf"), 
+    width = 10, height = 9)
+draw(Macro_heatmap_pathway)
+dev.off()
+
+cat("Macrophage heatmap saved to:", file.path(results_path, "Figures_5A_5B_SuppFig7A_Macrophage-Tumor-Macrophage_heatmap.pdf"), "\n")
+```
+
+## Tumor GSVA Heatmap
+
+```{r tumor-pathway-heatmap, fig.width=12, fig.height=10}
+# Tumor gene heatmap (based on 05_figure5A&B_SuppFig7A&B_half.R)
+Genelist_Tumor <- intersect(Tumor_customized_M1M2_formation, rownames(prepare_meta_output_Tumor[[2]]))
+
+# Tumor pathway heatmap (based on 05_figure5A&B_SuppFig7A&B_half.R)
+Tumor_heatmap_pathway <- create_complex_heatmap_FixEBV(
+  gene_list = NA,
+  scale_color_ht = 2,
+  pathway_matrix = gsva_results_Tumor,
+  expr_data = prepare_meta_output_Tumor[[2]],
+  meta_data = metaoutput_Tumor,
+  cluster_rows = TRUE,
+  cluster_columns = FALSE
+)
+
+# Display the heatmap
+draw(Tumor_heatmap_pathway)
+
+# Save Tumor pathway heatmap
+pdf(file.path(results_path, "Figures_5A_5B_SuppFig7A_Tumor_pathway_heatmap.pdf"), 
+    width = 10, height = 9)
+draw(Tumor_heatmap_pathway)
+dev.off()
+
+cat("Tumor pathway heatmap saved to:", file.path(results_path, "Figures_5A_5B_SuppFig7A_Tumor-Tumor-Macrophage_pathway_heatmap.pdf"), "\n")
+```
+
+# Virus Gene Heatmap (Tumor dataset)
+
+```{r virus-genes-heatmap}
+# virus_genes should be defined in 5-Preload_customized_gene_list.R
+stopifnot(exists("virus_genes"))
+
+virus_gene_list <- intersect(virus_genes, rownames(spe_obj_Tumor@assays@data$logcounts))
+
+# Create a metadata frame including required annotations
+meta_tumor <- as.data.frame(metaoutput_Tumor)
+if (!"LMP1 protein" %in% colnames(meta_tumor) && "LMP1_filtered_mean" %in% colnames(meta_tumor)) {
+  meta_tumor[["LMP1 protein"]] <- meta_tumor[["LMP1_filtered_mean"]]
+}
+
+Virus_heatmap_gene <- create_complex_heatmap_FixEBV(
+  gene_list = virus_gene_list,
+  scale_color_ht = 2,
+  pathway_matrix = NA,
+  expr_data = spe_obj_Tumor@assays@data$logcounts,
+  meta_data = meta_tumor,
+  cluster_rows = TRUE, cluster_columns = FALSE
+)
+
+draw(Virus_heatmap_gene)
+pdf(file.path(results_path, "Supplementary_Figure_5A_Tumor_virus_gene_heatmap.pdf"), width = 10, height = 9)
+draw(Virus_heatmap_gene)
+dev.off()
+```
+
+
+
+# Session Info
+
+```{r session}
+sessionInfo()
+```
+
+

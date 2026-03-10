@@ -1,0 +1,116 @@
+---
+title: "INDEPTH_check CellType and RNA for L25"
+author: "Yuzhou"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(qs)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(cowplot)
+library(standR)
+library(SingleCellExperiment)
+library(SpatialExperiment)
+library(GSVA)
+library(readxl)
+library(utils)
+library(reshape2)
+library(SeuratObject)
+library(Seurat)
+library(knitr)
+```
+
+## SpatialExperiment object and Gene enrichment-marker preparation
+
+```{r,include=T}
+wdpath <- "./data/Tonsil_run/"
+spe_postcorrection_mat <- read.csv(file.path(wdpath,"GeoMX_L24_L25_batchcorrection/CPM-nNCG_2500-k_5_PostCorrectExp_L25.csv"),row.names = 1,check.names = F)
+spe <- qread(file.path(wdpath,"GeoMX_L24_L25_batchcorrection/L25_spe_raw_counts.qs"))
+rownames(spe@assays@data$counts) <- rowData(spe)$TargetName
+Seurat_obj.out <- CreateSeuratObject(spe@assays@data$counts)
+Seurat_obj.out@assays$RNA@data <- as.matrix(spe_postcorrection_mat)
+Seurat_obj.out <- AddMetaData(Seurat_obj.out, as.data.frame(spe@colData))
+```
+
+## Heatmap based on scRNA-seq data DEG
+Note: endothelial cell marker were from [this paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7553370/). Then I used ChatGPT to help me to convert protein name to gene name and I also manually checked through GeneCards.
+
+For the other annotation:
+
+- Activated NBC: Activated Naive B Cell
+- CD4 T: CD4+ T Cell (Helper T Cell)
+- CD8 T: CD8+ T Cell (Cytotoxic T Cell)
+- DC: Dendritic Cell
+- Epithelial: Epithelial Cell
+- GCBC: Germinal Center B Cell
+- M1 Macrophages: M1 Macrophages (classically activated macrophages)
+- M2 Macrophages: M2 Macrophages (alternatively activated macrophages)
+- MBC: Memory B Cell
+- myeloid: Myeloid Cell
+- NBC: Naive B Cell
+- Treg: Treg Cells
+
+## original heatmap
+
+```{r,fig.width=10,fig.height=15}
+my.markerlist <- qread(file.path(wdpath,"Public_scRNASeq/calculated_marker_from_scRNA-seq.qs"))
+DEGDF <- my.markerlist$all_marker
+my.TcellmarkersOneVsAll <-  my.markerlist$my.TcellmarkersOneVsAll
+my.TcellMarkerTregsvsCD4 <- my.markerlist$my.TcellMarkerTregsvsCD4
+my.TcellMarkerCD4vsTregs <- my.markerlist$my.TcellMarkerCD4vsTregs
+my.MyeloidMarkerOnevsAll <- my.markerlist$my.MyeloidMarkerOnevsAll
+my.DCMarkerOnevsAll <- my.markerlist$my.DCMarkerOnevsAll
+my.M2MarkerOnevsM1 <- my.markerlist$my.M2MarkerOnevsM1
+endothelial_marker <- c("ANPEP", "ITGB1", "PECAM1", "CD34", "CD36", "ENTPD1", "CD44", "CD47", "ICAM1", "ITGB3", 
+  "SELE", "CD80", "CD86", "C1QR1", "ICAM2", "ENG", "VCAM1", "Nectin2", "KIT", "IL1R1", 
+  "PROM1", "THBD", "F3", "ACE", "CDH5", "MCAM", "BSG", "CD151", "CD160", "PROCR", 
+  "IL13RA1", "CD248", "KDR", "ADAM8", "ADAM9", "ADAM10", "ADAM12", "ADAM15", "ADAM17", 
+  "ADAM33", "ADAMTS13", "ADAMTS18", "CXCL16", "DCBLD2", "EMCN", "ESAM", "FABP", "IGG", 
+  "ITGA4", "KLF4", "LYVE1", "NOTCH", "PODXL", "PDPN", "RALBP1", "STAB1", "STAB2", "ANTXR1", 
+  "THSD1", "TEK","TIE1", "ALPL", "TNFRSF1B", "EGFL7", "AGGF1", "VWF")
+deg.cut <- 0.25
+DEGDF<-DEGDF[DEGDF$avg_log2FC >deg.cut,]
+# split all DEG
+DEGList <- split(DEGDF$gene, DEGDF$cluster)
+#split T cell DEG
+#split T cell DEG
+my.TcellmarkersOneVsAll <- my.TcellmarkersOneVsAll[my.TcellmarkersOneVsAll$avg_log2FC > deg.cut,]
+my.TcellmarkersOneVsAll$cluster <- paste0(my.TcellmarkersOneVsAll$cluster,"_OneVsAll")
+my.TcellmarkersOneVsAllList <- split(my.TcellmarkersOneVsAll$gene,my.TcellmarkersOneVsAll$cluster)
+DEGList <- c(DEGList,my.TcellmarkersOneVsAllList)
+# select one vs multiple gene based on cut off
+my.TcellMarkerTregsvsCD4 <- my.TcellMarkerTregsvsCD4[my.TcellMarkerTregsvsCD4$avg_log2FC > deg.cut,]
+my.TcellMarkerCD4vsTregs <- my.TcellMarkerCD4vsTregs[my.TcellMarkerCD4vsTregs$avg_log2FC > deg.cut,]
+
+DEGList$Tregs_tregvscd4 <- my.TcellMarkerTregsvsCD4$X
+DEGList$CD4_CD4vsTregs <- my.TcellMarkerCD4vsTregs$X
+# select myeloid cell lineage
+my.MyeloidMarkerOnevsAll <- my.MyeloidMarkerOnevsAll[my.MyeloidMarkerOnevsAll$avg_log2FC > 0.55 & my.MyeloidMarkerOnevsAll$p_val_adj < 0.05,]
+my.DCMarkerOnevsAll <- my.DCMarkerOnevsAll[my.DCMarkerOnevsAll$avg_log2FC > 0.6 & my.DCMarkerOnevsAll$p_val_adj < 0.05,]
+my.M2MarkerOnevsM1 <- my.M2MarkerOnevsM1[my.M2MarkerOnevsM1$avg_log2FC > deg.cut& my.M2MarkerOnevsM1$p_val_adj < 0.05,]
+DEGList$Myeloid_MyeloidvsAll <- c(my.MyeloidMarkerOnevsAll$X)
+DEGList$DC_DCvsAll <- my.DCMarkerOnevsAll$X
+DEGList$M2_M2vsM1 <- my.M2MarkerOnevsM1$X
+DEGList$Endo <- endothelial_marker
+```
+
+## create Seurat object for L24
+```{r}
+gsva_Para <- gsvaParam(Seurat_obj.out@assays$RNA@data, DEGList)
+gsva_scores_forSeurat <- gsva(gsva_Para)
+gsva_scores_forSeurat.df <- as.data.frame(t(gsva_scores_forSeurat))
+Seurat_obj.out <- AddMetaData(Seurat_obj.out,metadata = gsva_scores_forSeurat.df)
+# qsave(Seurat_obj.out,file.path(wdpath,"GeoMx_count_table/L25_seurat_update.qs"))
+```
+
+## session information
+```{r}
+sessionInfo()
+```
+
+
+
