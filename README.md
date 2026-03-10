@@ -20,6 +20,9 @@ The IN-DEPTH codebase and data are released to the academic community for non-co
 
 An overview of scripts in `paper_figures/`. These scripts reproduce the figures in the manuscript.
 
+<details>
+<summary>Click to expand</summary>
+
 | File Name | Description |
 | --- | --- |
 | [`01_figure_1.R`](paper_figures/01_figure_1.R) | Code for plots in figure 1 |
@@ -40,9 +43,14 @@ An overview of scripts in `paper_figures/`. These scripts reproduce the figures 
 | [`05_figure_5ABCD_supp_7AB.R`](paper_figures/05_figure_5ABCD_supp_7AB.R) | Code for plots in figure 5A, B, C, D and supplementary figures 7A, B |
 | [`05_figure_5E.R`](paper_figures/05_figure_5E.R) | Code for plots in figure 5E |
 
+</details>
+
 ## Overview of code
 
 An overview of code in `src`. Scripts in this folder contain the preprocessing steps used to generate input data for scripts in `paper_figures`.
+
+<details>
+<summary>Click to expand</summary>
 
 | Folder name | Description |
 | --- | --- |
@@ -53,3 +61,5 @@ An overview of code in `src`. Scripts in this folder contain the preprocessing s
 | [`05_figure_5_SGCC`](src/05_figure_5_SGCC) | Pipeline for SGCC analysis in figure 5 |
 | [`06_figure_6_scSGCC`](src/06_figure_6_scSGCC) | Pipeline for scSGCC analysis in figure 6 |
 | [`07_figure_7_CODEX_pipeline`](src/07_figure_7_CODEX_pipeline) | Pipeline for proteomics data preprocessing and analysis in figure 7. The `notebook/` folder contains the python notebook to perform the analysis for figure 7B |
+
+</details>
