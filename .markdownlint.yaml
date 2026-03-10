@@ -1,0 +1,7 @@
+# markdownlint configuration
+# MD013: line-length disabled — tables and URLs naturally exceed 80 chars
+# MD033: no-inline-html disabled — <ins> used intentionally for title formatting
+MD013: false
+MD033: false
+MD060:
+  style: compact
