@@ -63,3 +63,10 @@ An overview of code in `src`. Scripts in this folder contain the preprocessing s
 | [`07_figure_7_CODEX_pipeline`](src/07_figure_7_CODEX_pipeline) | Pipeline for proteomics data preprocessing and analysis in figure 7. The `notebook/` folder contains the python notebook to perform the analysis for figure 7B |
 
 </details>
+
+## Data Availability
+
+The processed data required to reproduce the analyses and figures are deposited on Zenodo under Creative Commons Attribution 4.0 International license.
+
+- Part 1 ([10.5281/zenodo.14530077](https://doi.org/10.5281/zenodo.14530077))
+- Part 2 ([10.5281/zenodo.18379155](https://doi.org/10.5281/zenodo.18379155))
