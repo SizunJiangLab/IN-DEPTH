@@ -42,6 +42,11 @@ An overview of scripts in `paper_figures/`. These scripts reproduce the figures 
 | [`05_figure_5AB_supp_7AB_half.R`](paper_figures/05_figure_5AB_supp_7AB_half.R) | Code for plots in figure 5A, B and supplementary figures 7A, B (half portion) |
 | [`05_figure_5ABCD_supp_7AB.R`](paper_figures/05_figure_5ABCD_supp_7AB.R) | Code for plots in figure 5A, B, C, D and supplementary figures 7A, B |
 | [`05_figure_5E.R`](paper_figures/05_figure_5E.R) | Code for plots in figure 5E |
+| [`06_figure_6B_supp_9E.R`](paper_figures/06_figure_6B_supp_9E.R) | Code for plots in figure 6B and supplementary figure 9E |
+| [`07_figure_7CD.R`](paper_figures/07_figure_7CD.R) | Code for plots in figure 7C and 7D |
+| [`07_figure_7E.R`](paper_figures/07_figure_7E.R) | Code for plots in figure 7E |
+| [`07_figure_7F_supp_10A.R`](paper_figures/07_figure_7F_supp_10A.R) | Code for plots in figure 7F and supplementary figure 10A |
+| [`07_figure_7G.py`](paper_figures/07_figure_7G.py) | Code for plots in figure 7G |
 
 </details>
 
@@ -60,7 +65,9 @@ An overview of code in `src`. Scripts in this folder contain the preprocessing s
 | [`05_figure_5_CODEX_GeoMx_analysis`](src/05_figure_5_CODEX_GeoMx_analysis) | Pipeline for transcriptomics data preprocessing and analysis in figure 5 |
 | [`05_figure_5_SGCC`](src/05_figure_5_SGCC) | Pipeline for SGCC analysis in figure 5 |
 | [`06_figure_6_scSGCC`](src/06_figure_6_scSGCC) | Pipeline for scSGCC analysis in figure 6 |
+| [`06_figure_6_correlation`](src/06_figure_6_correlation) | Pipeline for AUCell scoring and Spearman correlation analysis in figure 6 |
 | [`07_figure_7_CODEX_pipeline`](src/07_figure_7_CODEX_pipeline) | Pipeline for proteomics data preprocessing and analysis in figure 7. The `notebook/` folder contains the python notebook to perform the analysis for figure 7B |
+| [`07_figure_7_neighborhood_analysis`](src/07_figure_7_neighborhood_analysis) | Pipeline for spatial neighborhood analysis, DEG, GSEA, and ligand-receptor analysis in figure 7 |
 
 </details>
 
