@@ -2,7 +2,7 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-BMEngineeR%2FBioGSP-blue)](https://github.com/BMEngineeR/BioGSP) 
 
-## What is BioGSP? <img src="man/figures/logo.svg" align="right" width="150" alt="BioGSP logo" />
+## What is BioGSP?
 
 BioGSP is an R package that brings **Graph Signal Processing** to biological data analysis. It provides tools for analyzing spatial patterns in biological data using advanced mathematical techniques from graph theory and signal processing.
 
