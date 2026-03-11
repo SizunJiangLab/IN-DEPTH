@@ -53,12 +53,12 @@ format_pval <- function(p) {
 create_lr_plot <- function(data, lr_pair, title_prefix = "") {
   library(ggplot2)
   library(dplyr)
-  
+
   # Prepare data for plotting
   plot_data <- data %>%
     select(!!sym("lmp1"), value = all_of(lr_pair)) %>%
     filter(!is.na(!!sym("value")))
-  
+
   # Perform statistical tests
   lmp1p_values <- plot_data %>%
     filter(!!sym("lmp1") == "lmp1p") %>%
@@ -66,12 +66,12 @@ create_lr_plot <- function(data, lr_pair, title_prefix = "") {
   lmp1n_values <- plot_data %>%
     filter(!!sym("lmp1") == "lmp1n") %>%
     pull(!!sym("value"))
-  
-  
+
+
   # Wilcoxon test
   wilcox_result <- wilcox.test(lmp1p_values, lmp1n_values)
   wilcox_pval <- wilcox_result$p.value
-  
+
   # Create title with p-values
   title_text <- sprintf(
     "%s%s\nWilcoxon p = %s",
@@ -95,7 +95,7 @@ create_lr_plot <- function(data, lr_pair, title_prefix = "") {
       plot.title = element_text(hjust = 0.5, size = 10),
       legend.position = "right"
     )
-  
+
   return(p)
 }
 
@@ -103,14 +103,14 @@ create_lr_plot <- function(data, lr_pair, title_prefix = "") {
 create_lr_plot_pseudobulk <- function(data, lr_pair, title_prefix = "", seed = 42) {
   library(ggplot2)
   library(dplyr)
-  
+
   # Aggregate by pseudobulk (smp_id_fov)
   plot_data <- data %>%
     select(!!sym("lmp1"), !!sym("smp_id_fov"), value = all_of(lr_pair)) %>%
     filter(!is.na(!!sym("value"))) %>%
     group_by(!!sym("lmp1"), !!sym("smp_id_fov")) %>%
     summarise(mean_value = mean(!!sym("value"), na.rm = TRUE), .groups = "drop")
-  
+
   # Perform statistical tests
   lmp1p_values <- plot_data %>%
     filter(!!sym("lmp1") == "lmp1p") %>%
@@ -118,12 +118,12 @@ create_lr_plot_pseudobulk <- function(data, lr_pair, title_prefix = "", seed = 4
   lmp1n_values <- plot_data %>%
     filter(!!sym("lmp1") == "lmp1n") %>%
     pull(!!sym("mean_value"))
-  
-  
+
+
   # Wilcoxon test
   wilcox_result <- wilcox.test(lmp1p_values, lmp1n_values)
   wilcox_pval <- wilcox_result$p.value
-  
+
   # Create title with p-values
   title_text <- sprintf(
     "%s%s (Pseudobulk)\nWilcoxon p = %s",
@@ -131,10 +131,10 @@ create_lr_plot_pseudobulk <- function(data, lr_pair, title_prefix = "", seed = 4
     lr_pair,
     format_pval(wilcox_pval)
   )
-  
+
   # Set seed for reproducible jitter
   set.seed(seed)
-  
+
   # Create plot with scatter points
   p <- ggplot(plot_data, aes(x = !!sym("lmp1"), y = !!sym("mean_value"), fill = !!sym("lmp1"))) +
     geom_violin(alpha = 0.6, trim = FALSE) +
@@ -151,11 +151,11 @@ create_lr_plot_pseudobulk <- function(data, lr_pair, title_prefix = "", seed = 4
       plot.title = element_text(hjust = 0.5, size = 10),
       legend.position = "right"
     )
-  
+
   return(p)
 }
 
-# %% ========== Pseudobulk Analysis ==========
+# %% Pseudobulk Analysis ==========
 
 cat("\n=== Pseudobulk Analysis ===\n")
 
@@ -181,7 +181,7 @@ combined_plot_tumor_mac_pb <- wrap_plots(plot_list_tumor_mac_pb, ncol = 3, guide
 # Display pseudobulk plots
 print(combined_plot_tumor_mac_pb)
 
-# %% ========== Save Figures ==========
+# %% Save Figures ==========
 
 output_dir <- file.path(data_dir, "figures", "05_single_cell_lr_comparison")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)

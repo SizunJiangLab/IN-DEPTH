@@ -5,14 +5,14 @@
 #
 # Output: Dot plot showing L-R pair mean expression levels colored by significance
 
-# %% ========== Load Libraries ==========
+# %% Load Libraries ==========
 library(tidyverse)
 
-# %% ========== Data Paths ==========
+# %% Data Paths ==========
 script_path <- dirname(rstudioapi::getSourceEditorContext()$path)
 data_dir <- file.path(dirname(script_path), "src", "07_figure_7_ neighborhood_analysis")
 
-# %% ========== Define L-R Pairs of Interest ==========
+# %% Define L-R Pairs of Interest ==========
 
 # Ligand-receptor pairs selected for tumor-macrophage interaction analysis
 lr_pairs <- c(
@@ -28,7 +28,7 @@ lr_pairs <- c(
 )
 
 
-# %% ========== Load and Filter Data ==========
+# %% Load and Filter Data ==========
 
 # Load Squidpy results containing L-R interaction analysis
 df_squidpy <- read_csv(fs::path(data_dir, "05_squidpy_res_df_merged.csv"))
@@ -40,7 +40,7 @@ df_squidpy <- df_squidpy %>%
 df_squidpy$lr_pair <- factor(df_squidpy$lr_pair, levels = unique(df_squidpy$lr_pair))
 
 
-# %% ========== Reshape Data for Visualization ==========
+# %% Reshape Data for Visualization ==========
 
 # Transform data from wide to long format for easier plotting
 df_squidpy_long <- df_squidpy %>%
@@ -68,7 +68,7 @@ df_plot <- df_squidpy_mean %>%
   )
 
 
-# %% ========== Create Visualization ==========
+# %% Create Visualization ==========
 
 # Create dot plot with:
 # - x-axis: LMP1 status (lmp1n vs lmp1p)
@@ -98,7 +98,7 @@ p <- df_plot %>%
     plot.title = element_text(size = 12, face = "bold", hjust = 0.5)
   )
 
-# %% ========== Save Output ==========
+# %% Save Output ==========
 
 ggsave(
   fs::path(data_dir, "figures", "03_squidpy_lr_mean_comparison.pdf"),

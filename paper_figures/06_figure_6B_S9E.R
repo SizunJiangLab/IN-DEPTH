@@ -1,6 +1,6 @@
 #  Figure 6B and Figure S9E for codex_cosmx
 
-# %% Library Loading =====
+# %% Library Loading ==========
 
 SEPARATOR <- paste(rep("=", 80), collapse = "")
 
@@ -15,7 +15,7 @@ library(patchwork)
 
 cat("\nLibraries loaded successfully\n")
 
-# %% Configurations =====
+# %% Configurations ==========
 
 cat("\n", SEPARATOR, "\n", sep = "")
 cat("Configurations\n")
@@ -29,75 +29,75 @@ for (tag in c("core", "fov")) {
   cat("\n", SEPARATOR, "\n", sep = "")
   cat("Processing:", toupper(tag), "level analysis\n")
   cat(SEPARATOR, "\n", sep = "")
-  
-  # %% Load Data =====
-  
+
+  # %% Load Data ==========
+
   cat("\n--- Load Data ---\n")
-  
+
   output_dir <- fs::path(data_root, paste0("02_correlation_", tag))
   df_score_f <- fs::path(data_root, paste0("01_scores_", tag, ".csv"))
-  
+
   fs::dir_create(output_dir, recurse = TRUE)
   cat("Output directory:", as.character(output_dir), "\n")
   cat("Input file:", as.character(df_score_f), "\n")
-  
+
   df_score <- read_csv(df_score_f, show_col_types = FALSE)
   df_score <- df_score %>%
     mutate(data_tag = str_extract(region_id, "^[^_]+"))
-  
+
   cat("\nData loaded successfully\n")
   cat("   - Total regions:", nrow(df_score), "\n")
   cat("   - Total columns:", ncol(df_score), "\n")
   cat("   - Data tags:", paste(unique(df_score$data_tag), collapse = ", "), "\n")
-  
-  
-  # %% Spearman Correlation Analysis =====
-  
+
+
+  # %% Spearman Correlation Analysis ==========
+
   cat("\n--- Spearman Correlation Analysis ---\n")
-  
+
   score_columns <- c(
     "Dysfunction_CD4T", "Dysfunction_CD8T", "Dysfunction_T",
     "C1QC-Mac_Macrophage",
     "ebv_burden_B"
   )
-  
+
   cat("\nScore columns for correlation analysis:\n")
   for (col in score_columns) {
     cat("   -", col, "\n")
   }
-  
+
   df_score_selected <- df_score %>% select(all_of(score_columns))
-  
+
   # Calculate Spearman correlation and p-values
   cat("\nComputing Spearman correlation...\n")
   cor_spearman <- cor(df_score_selected, use = "pairwise.complete.obs", method = "spearman")
   p_spearman <- cor.mtest(df_score_selected, method = "spearman")$p
-  
+
   # Count significant correlations
   n_significant <- sum(p_spearman < 0.05, na.rm = TRUE) - nrow(p_spearman) # exclude diagonal
   cat("\nCorrelation analysis complete\n")
   cat("   - Total comparisons:", (nrow(cor_spearman)^2 - nrow(cor_spearman)) / 2, "\n")
   cat("   - Significant correlations (p < 0.05):", n_significant / 2, "\n")
-  
+
   cat("\nSpearman Correlation Matrix:\n")
   print(cor_spearman)
-  
+
   cat("\nSpearman p-values:\n")
   print(p_spearman)
-  
-  # %% Correlation Matrix Plot =====
-  
+
+  # %% Correlation Matrix Plot ==========
+
   cat("\n--- Correlation Matrix Plot ---\n")
-  
+
   cor_melt_sp <- melt(cor_spearman)
   p_melt_sp <- melt(p_spearman)
   colnames(cor_melt_sp) <- c("Var1", "Var2", "correlation")
   colnames(p_melt_sp) <- c("Var1", "Var2", "p_value")
-  
+
   plot_data_sp <- cor_melt_sp %>%
     left_join(p_melt_sp, by = c("Var1", "Var2")) %>%
     mutate(significant = p_value < 0.05)
-  
+
   p <- ggplot(plot_data_sp, aes(x = Var1, y = Var2, fill = correlation)) +
     geom_tile(color = "white") +
     geom_tile(
@@ -128,38 +128,38 @@ for (tag in c("core", "fov")) {
     ) +
     labs(title = "Spearman Correlation Matrix (black box: p < 0.05)") +
     coord_fixed()
-  
+
   p
-  
+
   output_file <- fs::path(output_dir, "01_correlation_matrix.pdf")
   ggsave(output_file, p, width = 6, height = 6)
   cat("\nCorrelation matrix plot saved to:", as.character(output_file), "\n")
-  
-  
-  # %% Scatter Plots =====
-  
+
+
+  # %% Scatter Plots ==========
+
   create_scatter_plot <- function(df, x_var, y_var, cor_mat, p_mat, color_by = NULL) {
     library(ggplot2)
     library(dplyr)
     library(tidyr)
-    
+
     # Data preparation
     if (is.null(color_by)) {
       df_plot <- df %>% select(x = all_of(x_var), y = all_of(y_var))
     } else {
       df_plot <- df %>% select(x = all_of(x_var), y = all_of(y_var), source = all_of(color_by))
     }
-    
+
     # create figures
     df_plot <- df_plot %>% drop_na()
     p <- ggplot(df_plot, aes(x = x, y = y))
-    
+
     if (!is.null(color_by)) {
       p <- p + geom_point(aes(color = source))
     } else {
       p <- p + geom_point()
     }
-    
+
     p <- p +
       geom_smooth(method = "lm", color = "red", se = TRUE) +
       scale_y_continuous(labels = function(x) sprintf("%.3f", x)) +
@@ -174,16 +174,16 @@ for (tag in c("core", "fov")) {
       ) +
       theme_bw() +
       theme(legend.position = "bottom", legend.box = "horizontal")
-    
+
     return(p)
   }
-  
+
   xy <- list(
     c("C1QC-Mac_Macrophage", "Dysfunction_CD4T"),
     c("C1QC-Mac_Macrophage", "Dysfunction_CD8T"),
     c("ebv_burden_B", "C1QC-Mac_Macrophage")
   )
-  
+
   cat("\nGenerating", length(xy), "scatter plots...\n")
 
   for (i in seq_along(xy)) {
@@ -223,7 +223,7 @@ cat(SEPARATOR, "\n", sep = "")
 
 
 #  Figure 6B for cosmx_only
-# %% Library Loading =====
+# %% Library Loading ==========
 
 SEPARATOR <- paste(rep("=", 80), collapse = "")
 
@@ -238,7 +238,7 @@ library(patchwork)
 
 cat("\nLibraries loaded successfully\n")
 
-# %% Configurations =====
+# %% Configurations ==========
 
 cat("\n", SEPARATOR, "\n", sep = "")
 cat("Configurations\n")
@@ -253,75 +253,75 @@ for (tag in c("fov")) {
   cat("\n", SEPARATOR, "\n", sep = "")
   cat("Processing:", toupper(tag), "level analysis\n")
   cat(SEPARATOR, "\n", sep = "")
-  
-  # %% Load Data =====
-  
+
+  # %% Load Data ==========
+
   cat("\n--- Load Data ---\n")
-  
+
   output_dir <- fs::path(data_root, paste0("02_correlation_", tag))
   df_score_f <- fs::path(data_root, paste0("01_scores_", tag, ".csv"))
-  
+
   fs::dir_create(output_dir, recurse = TRUE)
   cat("Output directory:", as.character(output_dir), "\n")
   cat("Input file:", as.character(df_score_f), "\n")
-  
+
   df_score <- read_csv(df_score_f, show_col_types = FALSE)
   df_score <- df_score %>%
     mutate(data_tag = str_extract(region_id, "^[^_]+"))
-  
+
   cat("\nData loaded successfully\n")
   cat("   - Total regions:", nrow(df_score), "\n")
   cat("   - Total columns:", ncol(df_score), "\n")
   cat("   - Data tags:", paste(unique(df_score$data_tag), collapse = ", "), "\n")
-  
-  
-  # %% Spearman Correlation Analysis =====
-  
+
+
+  # %% Spearman Correlation Analysis ==========
+
   cat("\n--- Spearman Correlation Analysis ---\n")
-  
+
   score_columns <- c(
     "Dysfunction_T",
     "C1QC-Mac_Macrophage",
     "ebv_burden_B"
   )
-  
+
   cat("\nScore columns for correlation analysis:\n")
   for (col in score_columns) {
     cat("   -", col, "\n")
   }
-  
+
   df_score_selected <- df_score %>% select(all_of(score_columns))
-  
+
   # Calculate Spearman correlation and p-values
   cat("\nComputing Spearman correlation...\n")
   cor_spearman <- cor(df_score_selected, use = "pairwise.complete.obs", method = "spearman")
   p_spearman <- cor.mtest(df_score_selected, method = "spearman")$p
-  
+
   # Count significant correlations
   n_significant <- sum(p_spearman < 0.05, na.rm = TRUE) - nrow(p_spearman) # exclude diagonal
   cat("\nCorrelation analysis complete\n")
   cat("   - Total comparisons:", (nrow(cor_spearman)^2 - nrow(cor_spearman)) / 2, "\n")
   cat("   - Significant correlations (p < 0.05):", n_significant / 2, "\n")
-  
+
   cat("\nSpearman Correlation Matrix:\n")
   print(cor_spearman)
-  
+
   cat("\nSpearman p-values:\n")
   print(p_spearman)
-  
-  # %% Correlation Matrix Plot =====
-  
+
+  # %% Correlation Matrix Plot ==========
+
   cat("\n--- Correlation Matrix Plot ---\n")
-  
+
   cor_melt_sp <- melt(cor_spearman)
   p_melt_sp <- melt(p_spearman)
   colnames(cor_melt_sp) <- c("Var1", "Var2", "correlation")
   colnames(p_melt_sp) <- c("Var1", "Var2", "p_value")
-  
+
   plot_data_sp <- cor_melt_sp %>%
     left_join(p_melt_sp, by = c("Var1", "Var2")) %>%
     mutate(significant = p_value < 0.05)
-  
+
   p <- ggplot(plot_data_sp, aes(x = Var1, y = Var2, fill = correlation)) +
     geom_tile(color = "white") +
     geom_tile(
@@ -352,38 +352,38 @@ for (tag in c("fov")) {
     ) +
     labs(title = "Spearman Correlation Matrix (black box: p < 0.05)") +
     coord_fixed()
-  
+
   p
-  
+
   output_file <- fs::path(output_dir, "01_correlation_matrix.pdf")
   ggsave(output_file, p, width = 6, height = 6)
   cat("\nCorrelation matrix plot saved to:", as.character(output_file), "\n")
-  
-  
-  # %% Scatter Plots =====
-  
+
+
+  # %% Scatter Plots ==========
+
   create_scatter_plot <- function(df, x_var, y_var, cor_mat, p_mat, color_by = NULL) {
     library(ggplot2)
     library(dplyr)
     library(tidyr)
-    
+
     # Data preparation
     if (is.null(color_by)) {
       df_plot <- df %>% select(x = all_of(x_var), y = all_of(y_var))
     } else {
       df_plot <- df %>% select(x = all_of(x_var), y = all_of(y_var), source = all_of(color_by))
     }
-    
+
     #  create figures
     df_plot <- df_plot %>% drop_na()
     p <- ggplot(df_plot, aes(x = x, y = y))
-    
+
     if (!is.null(color_by)) {
       p <- p + geom_point(aes(color = source))
     } else {
       p <- p + geom_point()
     }
-    
+
     p <- p +
       geom_smooth(method = "lm", color = "red", se = TRUE) +
       scale_y_continuous(labels = function(x) sprintf("%.3f", x)) +
@@ -398,15 +398,15 @@ for (tag in c("fov")) {
       ) +
       theme_bw() +
       theme(legend.position = "bottom", legend.box = "horizontal")
-    
+
     return(p)
   }
-  
+
   xy <- list(
     c("C1QC-Mac_Macrophage", "Dysfunction_T"),
     c("ebv_burden_B", "C1QC-Mac_Macrophage")
   )
-  
+
   cat("\nGenerating", length(xy), "scatter plots...\n")
 
   for (i in seq_along(xy)) {
@@ -432,7 +432,7 @@ for (tag in c("fov")) {
   }
 
   cat("\nAll individual scatter plots saved\n")
-  
+
   cat("\n", SEPARATOR, "\n", sep = "")
   cat(toupper(tag), "level analysis complete\n")
   cat(SEPARATOR, "\n", sep = "")

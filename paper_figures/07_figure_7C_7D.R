@@ -1,9 +1,9 @@
-# %%
+# %% Load Libraries ==========
 library(tidyverse)
 library(ggrepel)
 library(patchwork)
 
-# %%
+# %% Define plot_volcano ==========
 #' Create volcano plot from differential expression results
 #'
 #' @param df_deg Data frame containing differential expression results
@@ -44,10 +44,10 @@ plot_volcano <- function(
   library(dplyr)
   library(ggplot2)
   library(ggrepel)
-  
+
   # Set seed for reproducible label placement
   set.seed(seed)
-  
+
   # Prepare data
   df_volcano <- df_deg %>%
     rename(
@@ -65,21 +65,21 @@ plot_volcano <- function(
       label = ifelse(names %in% genes_to_label, names, "")
     ) %>%
     arrange(desc(.data$logfoldchanges))
-  
+
   # Print labeled genes for verification
   labeled_genes <- df_volcano %>%
     filter(.data$label != "") %>%
     pull(.data$label)
   cat("Labeled genes (", length(labeled_genes), "):\n", sep = "")
   print(labeled_genes)
-  
+
   # Calculate x-axis limits
   if (is.null(xlim_manual)) {
     xlim <- max(abs(df_volcano$logfoldchanges), na.rm = TRUE)
   } else {
     xlim <- xlim_manual
   }
-  
+
   # Create volcano plot
   p_volcano <- ggplot(
     df_volcano,
@@ -125,7 +125,7 @@ plot_volcano <- function(
       legend.position = "top",
       panel.grid.minor = element_blank()
     )
-  
+
   return(p_volcano)
 }
 
@@ -151,8 +151,7 @@ p_tumor_pval <- plot_volcano(
 )
 
 
-# %%
-# Macrophages Near LMP1+ vs LMP1-
+# %% Macrophages Near LMP1+ vs LMP1- Volcano ==========
 df_deg <- read_csv(fs::path(data_dir, "02_deg_mac_near_lmp1pos_vs_lmp1neg.csv"))
 genes_to_label <- c(
   "CTSB", "LYZ", "IDO1", "C1S", "GPNMB", "LGALS9", "CYBB", "PTEN", "COX1",
@@ -168,7 +167,7 @@ p_mac_pval <- plot_volcano(
   cutoff_log2fc = 0.25
 )
 
-# %%
+# %% Save Volcano Plots ==========
 p <- patchwork::wrap_plots(p_tumor_pval, p_mac_pval, ncol = 2)
 
 fs::dir_create(fs::path(data_dir, "figures"))
@@ -179,10 +178,7 @@ ggsave(
   height = 20
 )
 
-# %%
-
-
-# %%
+# %% Define plot_gsea_barplot ==========
 #' Create GSEA barplot from enrichment results
 #'
 #' @param df_gsea Data frame containing GSEA results
@@ -220,39 +216,39 @@ plot_gsea_barplot <- function(
     reverse_order = FALSE) {
   library(dplyr)
   library(ggplot2)
-  
+
   # Prepare data
   df_plot <- df_gsea %>%
     filter(!!sym(col_term) %in% terms_to_plot)
-  
+
   # Arrange by NES
   if (reverse_order) {
     df_plot <- df_plot %>% arrange(desc(!!sym(col_nes)))
   } else {
     df_plot <- df_plot %>% arrange(!!sym(col_nes))
   }
-  
+
   # Set factor levels for ordering
   df_plot[[col_term]] <- factor(df_plot[[col_term]], levels = df_plot[[col_term]])
-  
+
   # Add p-value and significance columns
   df_plot[["p"]] <- df_plot[[col_p]]
   df_plot[["significant"]] <- df_plot[["p"]] < cutoff_p
-  
+
   # Print significant terms for verification
   sig_terms <- df_plot %>%
     filter(.data$significant) %>%
     pull(!!sym(col_term))
   cat("Significant terms (", length(sig_terms), "):\n", sep = "")
   print(sig_terms)
-  
+
   # Calculate x-axis limits
   if (is.null(xlim_manual)) {
     xlim <- max(abs(df_plot[[col_nes]]), na.rm = TRUE) * sig_shift
   } else {
     xlim <- xlim_manual
   }
-  
+
   # Create barplot
   p <- ggplot(df_plot, aes(x = !!sym(col_nes), y = !!sym(col_term), fill = p)) +
     geom_col(alpha = bar_alpha) +
@@ -285,7 +281,7 @@ plot_gsea_barplot <- function(
       axis.text.y = element_text(size = 10),
       panel.grid.minor = element_blank()
     )
-  
+
   return(p)
 }
 
@@ -361,7 +357,7 @@ p_tumor_p <- plot_gsea_barplot(
 )
 
 
-# %%
+# %% Save GSEA Plots ==========
 p <- patchwork::wrap_plots(p_tumor_fdr, p_tumor_p, p_mac_fdr, p_mac_p, ncol = 1)
 
 fs::dir_create(fs::path(data_dir, "figures"))

@@ -11,7 +11,7 @@ This script provides 5 main visualization functions:
 env: wrplot
 """
 
-# %% ========== Import Libraries ==========
+# %% Import Libraries ==========
 from pathlib import Path
 
 import matplotlib.lines as mlines
@@ -24,7 +24,7 @@ from matplotlib.patches import Circle
 from skimage.segmentation import find_boundaries
 from tqdm import tqdm
 
-# %% ========== Constants ==========
+# %% Constants ==========
 TQDM_FORMAT = "{desc}: {percentage:3.0f}%|{bar:30}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]"
 RADIUS = 40
 
@@ -47,7 +47,7 @@ UP_QUANTILE = 0.95
 DOWN_QUANTILE = 0
 
 
-# %% ========== Data Paths ==========
+# %% Data Paths ==========
 
 data_dir = Path(__file__).parent.parent / "src" / "07_figure_7_ neighborhood_analysis"
 
@@ -58,7 +58,7 @@ output_root = Path(__file__).parent / "figures" / "03_squidpy"
 output_root.mkdir(parents=True, exist_ok=True)
 
 
-# %% ========== Load All Data ==========
+# %% Load All Data ==========
 
 # Load spatial transcriptomics data
 print("Loading spatial transcriptomics data...")
@@ -178,7 +178,7 @@ df_lr_expr = df_lr_expr[meta_cols + lr_cols]
 print("All data loaded successfully!")
 
 
-# %% ========== Get All Samples for Visualization ==========
+# %% Get All Samples for Visualization ==========
 
 n_annotation = (
     adata.obs.groupby(["smp_id_fov", "annotation_3"], observed=True)
@@ -203,7 +203,7 @@ mask = (
 smp_id_fov_list = n_annotation.index[mask].tolist()
 
 
-# %% ========== Functions ==========
+# %% Functions ==========
 
 
 def ax_plot_legend(
@@ -1060,7 +1060,7 @@ def plot_ligand_receptor_expression(
     return fig
 
 
-# %% ========== Batch Processing: Generate All Visualizations ==========
+# %% Batch Processing: Generate All Visualizations ==========
 
 for idx, smp_id_fov in enumerate(smp_id_fov_list, 1):
     print(f"\n{'=' * 60}")
