@@ -1,6 +1,6 @@
 # BioGSP: Biological Graph Signal Processing
 
-[![GitHub](https://img.shields.io/badge/GitHub-BMEngineeR%2FBioGSP-blue)](https://github.com/BMEngineeR/BioGSP) 
+[![GitHub](https://img.shields.io/badge/GitHub-BMEngineeR%2FBioGSP-blue)](https://github.com/BMEngineeR/BioGSP)
 
 ## What is BioGSP?
 
@@ -14,20 +14,20 @@ BioGSP is an R package that brings **Graph Signal Processing** to biological dat
 
 **Spectral Graph Wavelet Transform (SGWT)** is a mathematical technique that extends classical wavelet analysis to graphs and irregular spatial domains. Think of it as a "microscope" that can examine spatial patterns at different scales simultaneously:
 
--  **Multi-scale Analysis**: See both fine details and broad patterns in your spatial data
--  **Frequency Decomposition**: Separate smooth background patterns from sharp spatial features  
--  **Irregular Domains**: Works with any spatial layout, not just regular grids
--  **Perfect Reconstruction**: Can perfectly reconstruct your original signal from the decomposition
+- **Multi-scale Analysis**: See both fine details and broad patterns in your spatial data
+- **Frequency Decomposition**: Separate smooth background patterns from sharp spatial features  
+- **Irregular Domains**: Works with any spatial layout, not just regular grids
+- **Perfect Reconstruction**: Can perfectly reconstruct your original signal from the decomposition
 
 ## What is SGCC?
 
 **Spectral Graph Cross-Correlation (SGCC)** measures how similar two spatial patterns are across different scales using Fourier domain analysis:
 
--  **Fourier Domain Computation**: Works directly with spectral coefficients for mathematical accuracy
--  **DC Component Exclusion**: Ignores constant offset (λ = 0) to focus on meaningful spatial patterns
--  **Multi-scale Similarity**: Considers both fine-scale and broad-scale similarities
--  **Energy Normalized**: Fair comparison using Parseval's theorem-consistent energy weighting
--  **Robust Metric**: Ranges from -1 to 1, where higher values indicate greater similarity
+- **Fourier Domain Computation**: Works directly with spectral coefficients for mathematical accuracy
+- **DC Component Exclusion**: Ignores constant offset (λ = 0) to focus on meaningful spatial patterns
+- **Multi-scale Similarity**: Considers both fine-scale and broad-scale similarities
+- **Energy Normalized**: Fair comparison using Parseval's theorem-consistent energy weighting
+- **Robust Metric**: Ranges from -1 to 1, where higher values indicate greater similarity
 
 ## How This Package Works
 
@@ -40,7 +40,8 @@ graph LR
     E --> F[Results & Visualization]
 ```
 
-**Workflow**
+**Workflow**:
+
 1. **`initSGWT()`**: Initialize SGWT object with your spatial data and parameters
 2. **`runSpecGraph()`**: Build graph structure (adjacency, Laplacian, eigendecomposition) and auto-generate scales
 3. **`runSGWT()`**: Perform forward and inverse SGWT transforms on all signals
@@ -206,16 +207,16 @@ The new SGWT object contains:
 ## Use Cases
 
 ### Biological Applications
+
 - **Spatial Transcriptomics**: Compare gene expression patterns across tissue regions
 - **Single-cell Analysis**: Analyze the spatial organization of cell types
 - **Cancer Research**: Identify spatial heterogeneity in tumors
 - **Developmental Biology**: Track pattern formation during development
 
-
 ## Key Functions
 
 | Function | Purpose |
-|----------|---------|
+| -------- | ------- |
 | `initSGWT()` | Initialize SGWT object with data and parameters |
 | `runSpecGraph()` | Build spectral graph structure and auto-generate scales |
 | `runSGWT()` | Perform SGWT forward and inverse transforms |
@@ -232,6 +233,7 @@ The new SGWT object contains:
 ## Advanced Features
 
 ### Multiple Kernel Types
+
 ```r
 # Try different wavelet kernels
 SG_mexican <- initSGWT(demo_data, kernel_type = "mexican_hat")
