@@ -12,11 +12,9 @@ The advent of spatial transcriptomics and spatial proteomics has enabled profoun
 - [Data Integration Tutorials](https://github.com/SizunJiangLab/IN-DEPTH/blob/tutorial/tutorial/indepth_codex_geomx.ipynb): Detailed tutorials on integrating proteomics and transcriptomics data via image registration.
 - [SGCC Tutorial](tutorial/sgcc_tutorial.md): R package documentation, installation instructions, and a full functions overview.
 
-## Copyright & License
+## Reproducibility
 
-The IN-DEPTH codebase and data are released to the academic community for non-commercial academic research only. **Any commercial research use, integration into commercial products or services requires prior approvals.**
-
-## Script for figures
+### Figure Scripts
 
 An overview of scripts in `paper_figures/`. These scripts reproduce the figures in the manuscript.
 
@@ -50,7 +48,7 @@ An overview of scripts in `paper_figures/`. These scripts reproduce the figures 
 
 </details>
 
-## Overview of code
+### Analysis Pipelines
 
 An overview of code in `src`. Scripts in this folder contain the preprocessing steps used to generate input data for scripts in `paper_figures`.
 
@@ -71,9 +69,25 @@ An overview of code in `src`. Scripts in this folder contain the preprocessing s
 
 </details>
 
-## Data Availability
+### Data Availability
 
 The processed data required to reproduce the analyses and figures are deposited on Zenodo under Creative Commons Attribution 4.0 International license.
 
 - Part 1 ([10.5281/zenodo.14530077](https://doi.org/10.5281/zenodo.14530077))
 - Part 2 ([10.5281/zenodo.18379155](https://doi.org/10.5281/zenodo.18379155))
+
+## Reference
+
+```bibtex
+@article{
+    Coming soon ...
+}
+```
+
+## Copyright & License
+
+The IN-DEPTH codebase and data are released to the academic community for non-commercial academic research only. **Any commercial research use, integration into commercial products or services requires prior approvals.**
+
+## Contact
+
+If you have questions, comments, or concerns, feel free to email **Sizun Jiang** (`sjiang3@bidmc.harvard.edu`) or **Stephanie Pei Tung Yiu** (`syiu@bidmc.harvard.edu`). All requests and questions will be answered in a timely manner. Immediate responses may not be available.
