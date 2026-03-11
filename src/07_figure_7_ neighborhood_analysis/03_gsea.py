@@ -1,14 +1,11 @@
-# %%
+# %% Import libraries ==========
 from pathlib import Path
 
 import gseapy as gp
 import numpy as np
 import pandas as pd
 
-# %%
-# ====================================
-# Load DEG results
-# ====================================
+# %% Load DEG results ==========
 output_dir = Path(__file__).parent
 
 deg_tumor = pd.read_csv(output_dir / "02_deg_lmp1pos_vs_lmp1neg_tumors.csv")
@@ -18,10 +15,7 @@ print("Loaded DEG results:")
 print(f"Tumor DEGs: {len(deg_tumor)} genes")
 print(f"Macrophage DEGs: {len(deg_mac)} genes")
 
-# %%
-# ====================================
-# Gene sets configuration
-# ====================================
+# %% Gene sets configuration ==========
 print("\n" + "=" * 80)
 print("Gene Sets Configuration")
 print("=" * 80)
@@ -38,10 +32,7 @@ print("\nGene sets to use:")
 for gs in gene_sets:
     print(f"  - {gs}")
 
-# %%
-# ====================================
-# GSEA 1: LMP1+ vs LMP1- tumors
-# ====================================
+# %% GSEA 1: LMP1+ vs LMP1- tumors ==========
 print("\n" + "=" * 80)
 print("GSEA Analysis 1: LMP1+ vs LMP1- Tumors")
 print("=" * 80)
@@ -100,10 +91,7 @@ for gene_set in gene_sets:
         print(f"Error with {gene_set_name}: {e}")
         continue
 
-# %%
-# ====================================
-# GSEA 2: Macrophages near LMP1+ vs LMP1- tumors
-# ====================================
+# %% GSEA 2: Macrophages near LMP1+ vs LMP1- tumors ==========
 print("\n" + "=" * 80)
 print("GSEA Analysis 2: Macrophages near LMP1+ vs LMP1- Tumors")
 print("=" * 80)
@@ -162,10 +150,7 @@ for gene_set in gene_sets:
         continue
 
 
-# %%
-# ====================================
-# Summary statistics
-# ====================================
+# %% Summary statistics ==========
 print("\n" + "=" * 80)
 print("GSEA Analysis Summary")
 print("=" * 80)

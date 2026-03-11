@@ -1,8 +1,6 @@
 # env: rsc
 
-# %% ===========================================================================
-# Import libraries
-# ==============================================================================
+# %% Import libraries ==========
 from pathlib import Path
 
 import pandas as pd
@@ -13,9 +11,7 @@ import scanpy as sc
 TQDM_FORMAT = "{desc}: {percentage:3.0f}%|{bar:30}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]"
 SEPARATOR = "=" * 80
 
-# %% ===========================================================================
-# Setup Output Directory
-# ==============================================================================
+# %% Setup Output Directory ==========
 
 print(f"\n{SEPARATOR}")
 print("Setup Output Directory")
@@ -28,9 +24,7 @@ output_dir = input_dir / "codex_cosmx"
 output_dir.mkdir(parents=True, exist_ok=True)
 print(f"Output directory: {output_dir}")
 
-# %% ===========================================================================
-# Load Data
-# ==============================================================================
+# %% Load Data ==========
 
 print(f"\n{SEPARATOR}")
 print("Load Data")
@@ -44,9 +38,7 @@ print(f"   - Total cells: {adata.n_obs:,}")
 print(f"   - Total genes: {adata.n_vars:,}")
 
 
-# %% ===========================================================================
-# Compute AUCell Scores
-# ==============================================================================
+# %% Compute AUCell Scores ==========
 
 print(f"\n{SEPARATOR}")
 print("Compute AUCell Scores")
@@ -126,9 +118,7 @@ print("   Scores stored in adata.obsm['score_aucell']")
 print("\nAUCell scores computed.")
 
 
-# %% ===========================================================================
-# Compute EBV Burden
-# ==============================================================================
+# %% Compute EBV Burden ==========
 
 print(f"\n{SEPARATOR}")
 print("Compute EBV Burden")
@@ -163,9 +153,7 @@ else:
     adata.obs["ebv_burden"] = 0
 
 
-# %% ===========================================================================
-# Combine Scores (single-cell-level)
-# ==============================================================================
+# %% Combine Scores (single-cell-level) ==========
 
 print(f"\n{SEPARATOR}")
 print("Combine Scores (single-cell-level)")
@@ -186,9 +174,7 @@ print("\nSummary of all computed scores:")
 print(adata.obsm["analysis"].describe())
 
 
-# %% ===========================================================================
-# Save Processed Data
-# ==============================================================================
+# %% Save Processed Data ==========
 
 print(f"\n{SEPARATOR}")
 print("Save Processed Data")
@@ -203,9 +189,7 @@ print(f"   - Total genes: {adata.n_vars}")
 print(f"   - Analysis metrics: {adata.obsm['analysis'].shape[1]}")
 
 
-# %% ===========================================================================
-# Calculate Scores (region-level)
-# ==============================================================================
+# %% Calculate Scores (region-level) ==========
 
 print(f"\n{SEPARATOR}")
 print("Calculate Scores (region-level)")
@@ -370,9 +354,7 @@ print(fov_scores.head())
 
 print("\nFOV-level scores computed.")
 
-# %% ===========================================================================
-# Save Region-Level Scores
-# ==============================================================================
+# %% Save Region-Level Scores ==========
 
 print(f"\n{SEPARATOR}")
 print("Save Region-Level Scores")

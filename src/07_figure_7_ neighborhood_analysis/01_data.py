@@ -1,4 +1,4 @@
-# %%
+# %% Import libraries ==========
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -166,7 +166,7 @@ print(df_neighbors_mac.tag.value_counts())
 print()
 print(df_neighbors_mac.annotation_3.value_counts())
 
-# %%
+# %% Assign annotation_3 labels ==========
 # Assign annotation_3 to adata_ebv.obs
 # Initialize with annotation_2
 adata_ebv.obs["annotation_3"] = adata_ebv.obs["annotation_2"]
@@ -185,8 +185,7 @@ adata_ebv.obs.loc[mask_tumor, "annotation_3"] = (
 
 print(adata_ebv.obs.annotation_3.value_counts())
 
-# %%
-# Visualization: Spatial distribution of cells by annotation_3
+# %% Visualization: Spatial distribution of cells by annotation_3 ==========
 smp_id = "DFCI_c12"
 
 plot_circle = True  # Whether to draw circles around macrophages
@@ -323,8 +322,7 @@ ax.legend()
 ax.set_aspect("equal")
 
 
-# %%
-# Save results
+# %% Save results ==========
 output_dir.mkdir(exist_ok=True)
 
 adata_ebv.write_h5ad(output_dir / "01_adata_with_spatial.h5ad")

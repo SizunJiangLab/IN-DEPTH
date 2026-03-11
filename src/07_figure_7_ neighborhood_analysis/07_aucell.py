@@ -5,7 +5,7 @@ import pandas as pd
 import rapids_singlecell as rsc
 import scanpy as sc
 
-# %% ========== Load data ==========
+# %% Load data ==========
 
 data_dir = Path(__file__).parent
 
@@ -19,7 +19,7 @@ print("\nTumor environment distribution:")
 print(adata.obs["annotation_3"].value_counts())
 
 
-# %% ========== Read GMT files and prepare gene sets ==========
+# %% Read GMT files and prepare gene sets ==========
 
 
 def read_gmt(gmt_file):
@@ -125,11 +125,11 @@ genesets_df = (
     .reset_index(drop=True)
 )
 
-# %%
+# %% Validate gene sets ==========
 print(f"\nGene sets DataFrame shape: {genesets_df.shape}")
 print(f"\nGene sets: \n{genesets_df.source.unique()}")
 
-# %% ========== Compute AUCell scores ==========
+# %% Compute AUCell scores ==========
 
 print("\nComputing AUCell scores...")
 adata_result = rsc.dcg.aucell(adata, net=genesets_df, verbose=True, empty=True, tmin=0)
@@ -144,7 +144,7 @@ print("   Scores stored in adata.obsm['score_aucell']")
 print("\nAUCell scores computed.")
 
 
-# %% ========== Export results to CSV ==========
+# %% Export results to CSV ==========
 
 # Extract metadata columns
 metadata_df = adata.obs.copy()
@@ -165,7 +165,7 @@ print(f"Output shape: {result_df.shape}")
 print("\nFirst few rows:")
 print(result_df.head())
 
-# %%
+# %% Load neighbor relationships ==========
 
 # Load neighbor relationships and annotations
 print(
@@ -217,8 +217,7 @@ df_neighbors = (
 )
 print(f"  ✓ Added spatial coordinates for {len(df_neighbors)} cell pairs")
 
-# %%
-# %% ========== 04. Macrophage-Centered AUCell Aggregation ==========
+# %% 04. Macrophage-Centered AUCell Aggregation ==========
 
 print("\n" + "=" * 80)
 print("STEP 4: Aggregating LR Means per Macrophage Cell")
@@ -258,5 +257,3 @@ df_center_aucell = df_neighbors_long_mac.merge(
     df_neighbors_long_tumor, left_index=True, right_index=True, how="outer"
 ).fillna(0)
 df_center_aucell.to_feather(data_dir / "07_macrophage_centered_aucell_scores.feather")
-
-# %%

@@ -19,7 +19,7 @@ Output:
     - 06_macrophage_center_lr_mean_pair.feather: Macrophage-centered aggregated LR means (pair version)
 """
 
-# %%
+# %% Import libraries ==========
 from pathlib import Path
 
 import pandas as pd
@@ -29,7 +29,7 @@ from tqdm import tqdm
 TQDM_FORMAT = "{desc}: {percentage:3.0f}%|{bar:30}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]"
 
 
-# %% ========== 01. Data Loading and Preprocessing ==========
+# %% 01. Data Loading and Preprocessing ==========
 
 print("=" * 80)
 print("STEP 1: Loading and Preprocessing Data")
@@ -108,7 +108,7 @@ df_squidpy_t2m = df_squidpy[df_squidpy["interaction"] == "tumor::macrophage"].co
 print(f"  Filtered to {len(df_squidpy_t2m)} tumor-to-macrophage interactions")
 
 
-# %% ========== 02. Tumor-Macrophage LR Mean Calculation ==========
+# %% 02. Tumor-Macrophage LR Mean Calculation ==========
 
 print("\n" + "=" * 80)
 print("STEP 2: Calculating Ligand-Receptor Mean Expression (Single-Cell Pairs)")
@@ -174,7 +174,7 @@ print(f"  - Shape (lr_mean/pair): {df_lr_mean.shape}")
 print(f"  - Shape (lr_expr): {df_lr_expr.shape}")
 
 
-# %% ========== 03. Annotate and Save Single-Cell Pair Results ==========
+# %% 03. Annotate and Save Single-Cell Pair Results ==========
 
 print("\n" + "=" * 80)
 print("STEP 3: Annotating LMP1 Status and Saving Single-Cell Results")
@@ -266,7 +266,7 @@ df_neighbors_lr_expr.to_feather(output_file_3)
 print(f"  ✓ Saved: {output_file_3}")
 print(f"    Shape: {df_neighbors_lr_expr.shape}")
 
-# %% ========== 04. Macrophage-Centered LR Mean Aggregation ==========
+# %% 04. Macrophage-Centered LR Mean Aggregation ==========
 
 print("\n" + "=" * 80)
 print("STEP 4: Aggregating LR Means per Macrophage Cell")

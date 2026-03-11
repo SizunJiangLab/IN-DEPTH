@@ -1,12 +1,9 @@
-# %%
+# %% Import libraries ==========
 from pathlib import Path
 
 import scanpy as sc
 
-# %%
-# ====================================
-# Load data
-# ====================================
+# %% Load data ==========
 output_dir = Path(__file__).parent
 adata_ebv = sc.read_h5ad(output_dir / "01_adata_with_spatial.h5ad")
 
@@ -15,10 +12,7 @@ print(adata_ebv)
 print("\nAnnotation distribution:")
 print(adata_ebv.obs["annotation_3"].value_counts())
 
-# %%
-# ====================================
-# DEG 1: LMP1+ tumors vs LMP1- tumors
-# ====================================
+# %% DEG 1: LMP1+ tumors vs LMP1- tumors ==========
 print("\n" + "=" * 80)
 print("DEG Analysis 1: LMP1+ tumors vs LMP1- tumors")
 print("=" * 80)
@@ -56,10 +50,7 @@ print(deg_tumor.tail(10)[["names", "logfoldchanges", "pvals_adj"]])
 deg_tumor.to_csv(output_dir / "02_deg_lmp1pos_vs_lmp1neg_tumors.csv", index=False)
 print(f"\nSaved to: {output_dir / '02_deg_lmp1pos_vs_lmp1neg_tumors.csv'}")
 
-# %%
-# ====================================
-# DEG 2: Macrophages near LMP1+ vs LMP1- tumors
-# ====================================
+# %% DEG 2: Macrophages near LMP1+ vs LMP1- tumors ==========
 print("\n" + "=" * 80)
 print("DEG Analysis 2: Macrophages surrounding LMP1+ vs LMP1- tumors")
 print("=" * 80)
@@ -98,5 +89,3 @@ print(deg_mac.tail(10)[["names", "logfoldchanges", "pvals_adj"]])
 # Save results
 deg_mac.to_csv(output_dir / "02_deg_mac_near_lmp1pos_vs_lmp1neg.csv", index=False)
 print(f"\nSaved to: {output_dir / '02_deg_mac_near_lmp1pos_vs_lmp1neg.csv'}")
-
-# %%

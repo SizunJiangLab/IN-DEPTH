@@ -1,4 +1,4 @@
-# %%
+# %% Import libraries ==========
 from pathlib import Path
 
 import numpy as np
@@ -68,7 +68,7 @@ for idx, sample in enumerate(samples):
     )
 
 
-# %%
+# %% Define helper functions ==========
 
 
 def process_ligrec_results(res):

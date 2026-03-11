@@ -1,12 +1,9 @@
-# %%
+# %% Import libraries ==========
 from pathlib import Path
 
 import pandas as pd
 
-# %%
-# ====================================
-# Configuration
-# ====================================
+# %% Configuration ==========
 output_dir = Path(__file__).parent
 
 # Gene set names (databases)
@@ -21,10 +18,7 @@ gene_set_names = [
 analysis_types = ["tumor", "mac"]
 
 
-# %%
-# ====================================
-# Function to merge GSEA results
-# ====================================
+# %% Function to merge GSEA results ==========
 def merge_gsea_results(output_dir, analysis_type, gene_set_names, fdr_threshold=0.25):
     """
     Merge GSEA results from multiple databases
@@ -113,10 +107,7 @@ def filter_and_save(merged_df, output_dir, analysis_type, fdr_threshold=0.25):
         print("No significant pathways found")
 
 
-# %%
-# ====================================
-# Merge Tumor results
-# ====================================
+# %% Merge Tumor results ==========
 print("=" * 80)
 print("Merging GSEA results for TUMOR analysis")
 print("=" * 80)
@@ -124,10 +115,7 @@ print("=" * 80)
 tumor_merged = merge_gsea_results(output_dir, "tumor", gene_set_names)
 filter_and_save(tumor_merged, output_dir, "tumor", fdr_threshold=0.25)
 
-# %%
-# ====================================
-# Merge Macrophage results
-# ====================================
+# %% Merge Macrophage results ==========
 print("\n" + "=" * 80)
 print("Merging GSEA results for MACROPHAGE analysis")
 print("=" * 80)
@@ -135,10 +123,7 @@ print("=" * 80)
 mac_merged = merge_gsea_results(output_dir, "mac", gene_set_names)
 filter_and_save(mac_merged, output_dir, "mac", fdr_threshold=0.25)
 
-# %%
-# ====================================
-# Compare Tumor vs Macrophage (optional)
-# ====================================
+# %% Compare Tumor vs Macrophage (optional) ==========
 print("\n" + "=" * 80)
 print("Comparison: Tumor vs Macrophage")
 print("=" * 80)
@@ -167,10 +152,7 @@ if tumor_merged is not None and mac_merged is not None:
             print(f"  {term[:60]}")
             print(f"    Tumor NES: {tumor_nes:.3f}, Mac NES: {mac_nes:.3f}")
 
-# %%
-# ====================================
-# Database statistics
-# ====================================
+# %% Database statistics ==========
 print("\n" + "=" * 80)
 print("Database Statistics")
 print("=" * 80)
