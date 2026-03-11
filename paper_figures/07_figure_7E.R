@@ -10,7 +10,7 @@ library(tidyverse)
 
 # %% Data Paths ==========
 script_path <- dirname(rstudioapi::getSourceEditorContext()$path)
-data_dir <- file.path(dirname(script_path), "src", "07_figure_7_ neighborhood_analysis")
+data_dir <- file.path(dirname(script_path), "src", "07_figure_7_neighborhood_analysis")
 
 # %% Define L-R Pairs of Interest ==========
 

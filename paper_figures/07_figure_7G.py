@@ -49,7 +49,7 @@ DOWN_QUANTILE = 0
 
 # %% Data Paths ==========
 
-data_dir = Path(__file__).parent.parent / "src" / "07_figure_7_ neighborhood_analysis"
+data_dir = Path(__file__).parent.parent / "src" / "07_figure_7_neighborhood_analysis"
 
 # the directory should be the "06_figure_6_Segmentation_mask" folder in 10.5281/zenodo.18379156
 seg_dir = ""

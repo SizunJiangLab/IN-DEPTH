@@ -131,7 +131,7 @@ plot_volcano <- function(
 
 # %% LMP1+ vs LMP1- Tumor ==========
 script_path <- dirname(rstudioapi::getSourceEditorContext()$path)
-data_dir <- file.path(dirname(script_path), "src", "07_figure_7_ neighborhood_analysis")
+data_dir <- file.path(dirname(script_path), "src", "07_figure_7_neighborhood_analysis")
 
 df_deg <- read_csv(fs::path(data_dir, "02_deg_lmp1pos_vs_lmp1neg_tumors.csv"))
 genes_to_label <- c(
