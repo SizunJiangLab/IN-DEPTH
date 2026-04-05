@@ -1,10 +1,17 @@
-# Same-Slide Spatial Multi-Omics Integration Reveals Tumor Virus-Linked Spatial Reorganization of the Tumor Microenvironment
+# Same-Slide Spatial Multi-Omics Integration with IN-DEPTH Reveals Tumor Virus-Linked Spatial Reorganization of the Tumor Microenvironment
 
 ![overview](https://github.com/SizunJiangLab/IN-DEPTH/blob/main/docs/assets/images/overview.png)
 
+> **Published in *Cancer Discovery* (2026):** [https://doi.org/10.1158/2159-8290.CD-25-0775](https://doi.org/10.1158/2159-8290.CD-25-0775)
+
+## Updates
+
+- **[2026-03]** Published in *Cancer Discovery*! [[Link]](https://doi.org/10.1158/2159-8290.CD-25-0775)
+- **[2024-12]** Preprint available on bioRxiv. [[Link]](https://doi.org/10.1101/2024.12.20.629650)
+
 ## Abstract
 
-The advent of spatial transcriptomics and spatial proteomics has enabled profound insights into tissue organization, however, these technologies remain largely independent, and emerging same slide multi-omics approaches are limited in plex, spatial resolution, and integrative analytics. We introduce <ins>***IN-situ DEtailed Phenotyping To High-resolution transcriptomics (IN-DEPTH)***</ins>, a streamlined, resource-efficient, and commercially platform-compatible workflow that uses single-cell spatial proteomics-derived imaging to guide transcriptomic capture on the same slide without RNA signal loss. To integrate modalities beyond domain- or niche-level mapping, we developed Spectral Graph Cross-Correlation (SGCC), an integrated proteomic-transcriptomic framework that resolves spatially coordinated functional state changes across interacting cell populations. Applied to diffuse large B-cell lymphoma (DLBCL), IN-DEPTH and SGCC enabled stepwise discovery from multicellular comparisons of Epstein–Barr virus (EBV)-positive and EBV-negative tumors to single-cell analyses revealing coordinated tumor–macrophage–CD4 T-cell remodeling. This approach identified enrichment of immunosuppressive C1Q macrophage polarization and CD4 T-cell dysfunction and further localized these programs to viral oncoprotein LMP1-driven tumor states and a candidate IL-27–STAT3 signaling axis. Collectively, IN-DEPTH enables scalable spatial multi-omics to uncover clinically relevant microenvironmental mechanisms.
+Spatial transcriptomics and proteomics have enabled profound insights into tissue organization, yet these technologies remain largely disparate, and emerging same-slide multi-omics approaches are limited in plex, spatial resolution, signal retention, and integrative analytics. We introduce <ins>***IN-situ DEtailed Phenotyping To High-resolution transcriptomics (IN-DEPTH)***</ins>, a streamlined, resource-efficient, commercially compatible workflow using single-cell spatial proteomics-derived imaging to guide transcriptomic capture on the same slide without RNA signal loss. To integrate modalities beyond niche-level mapping, we developed Spectral Graph Cross-Correlation (SGCC), a proteomic-transcriptomic framework resolving spatially coordinated functional state changes across interacting cell populations. Applied to diffuse large B-cell lymphoma (DLBCL), IN-DEPTH and SGCC enabled stepwise discovery from EBV-positive and EBV-negative tumor comparisons to single-cell resolution, revealing coordinated tumor–macrophage–CD4 T-cell remodeling, immunosuppressive C1Q macrophage enrichment, CD4 T-cell dysfunction, and a candidate IL-27–STAT3 signaling axis. Collectively, IN-DEPTH enables scalable spatial multi-omics to uncover clinically relevant microenvironmental mechanisms and towards robust spatial multi-modal AI models.
 
 ## Tutorials
 
@@ -71,7 +78,7 @@ An overview of code in `src`. Scripts in this folder contain the preprocessing s
 
 ### Data Availability
 
-The processed data required to reproduce the analyses and figures are deposited on Zenodo under Creative Commons Attribution 4.0 International license.
+The processed data required to reproduce the analyses and figures are deposited on Zenodo under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/) license.
 
 - Part 1 ([10.5281/zenodo.14530077](https://doi.org/10.5281/zenodo.14530077))
 - Part 2 ([10.5281/zenodo.18379155](https://doi.org/10.5281/zenodo.18379155))
@@ -79,14 +86,24 @@ The processed data required to reproduce the analyses and figures are deposited 
 ## Reference
 
 ```bibtex
-@article{
-    Coming soon ...
+@article{yiu2026indepth,
+    title={Same-Slide Spatial Multi-Omics Integration with IN-DEPTH Reveals Tumor Virus-Linked Spatial Reorganization of the Tumor Microenvironment},
+    author={Yiu, Stephanie Pei Tung and Chang, Yuzhou and Yeo, Yao Yu and Qiu, Huaying and Wu, Wenrui and Michel, Hendrik A and Jin, Xiaojie and Huang, Rongting and Kure, Shoko and Parmelee, Lindsay and Luo, Shuli and Cramer, Precious and Lee, Jia Le and Wang, Yang and Zhao, Zhangxin and Yeung, Jason and El Ahmar, Nourhan and Simsek, Berkay and Mohanna, Razan and Van Orden, McKayla and Lu, Wesley S and Livak, Kenneth J and Li, Shuqiang and Gao, Ce and Burgess, Melinda and Keane, Colm and Shahryari, Jahanbanoo and Kingsley, Leandra G and Al-Humadi, Reem N and Nasr, Sahar and Nkosi, Dingani and Sadigh, Sam and Rock, Philip and Frauenfeld, Leonie and Kaufmann, Louisa and Zhu, Bokai and Basak, Ankit and Dhanikonda, Nagendra and Chan, Chi Ngai and Krull, Jordan and Cho, Ye Won and Chen, Chia-Yu and Brown, Jonathan and Wang, Hongbo and Zhao, Bo and Lee, Jia-Ying Joey and Loo, Lit-Hsin and Kim, David M and Boussiotis, Vassiliki A and Zhang, Baochun and Wei, Kevin and Shalek, Alex K and Howitt, Brooke E and Signoretti, Sabina and Sch\"urch, Christian M and Hodi, F Stephen and Burack, W Richard and Rodig, Scott J and Ma, Qin and Jiang, Sizun},
+    journal={Cancer Discovery},
+    year={2026},
+    doi={10.1158/2159-8290.CD-25-0775},
+    pmid={41874448},
+    publisher={American Association for Cancer Research}
 }
 ```
 
 ## Copyright & License
 
-The IN-DEPTH codebase and data are released to the academic community for non-commercial academic research only. **Any commercial research use, integration into commercial products or services requires prior approvals.**
+The accompanying [publication](https://doi.org/10.1158/2159-8290.CD-25-0775) is distributed under the [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)](https://creativecommons.org/licenses/by-nc-nd/4.0/) license.
+
+The software code in this repository is provided for **non-commercial academic research purposes only**. Any commercial use — including but not limited to incorporation into commercial products, services, or clinical diagnostic tools — requires prior written approval from the corresponding authors. See the [LICENSE](LICENSE) file for full terms.
+
+The processed data deposited on Zenodo are shared under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license.
 
 ## Contact
 
