@@ -1,0 +1,73 @@
+IN-DEPTH Non-Commercial Academic License
+
+Copyright (c) 2024-2026, Sizun Jiang Lab
+Beth Israel Deaconess Medical Center, Harvard Medical School
+All rights reserved.
+
+TERMS AND CONDITIONS
+
+1. PERMITTED USE
+
+   This software and associated documentation files (the "Software") are
+   provided for non-commercial academic research purposes only. You may use,
+   copy, and modify the Software solely for academic research that is not
+   intended for or directed toward commercial advantage or monetary
+   compensation.
+
+2. RESTRICTIONS
+
+   You may NOT, without prior written approval from the copyright holders:
+
+   a. Use the Software or any derivative work for commercial purposes,
+      including but not limited to:
+      - Incorporation into commercial products or services
+      - Use in clinical diagnostic tools or pipelines intended for commercial
+        deployment
+      - Use by or on behalf of a for-profit entity for revenue-generating
+        activities
+
+   b. Distribute, sublicense, or sell copies of the Software or derivative
+      works for commercial purposes.
+
+3. ATTRIBUTION
+
+   Any academic publication or presentation that uses this Software must cite
+   the following article:
+
+   Yiu SPT, Chang Y, Yeo YY, et al. Same-Slide Spatial Multi-Omics
+   Integration with IN-DEPTH Reveals Tumor Virus-Linked Spatial
+   Reorganization of the Tumor Microenvironment. Cancer Discovery. 2026.
+   DOI: 10.1158/2159-8290.CD-25-0775
+
+4. DATA LICENSE
+
+   The processed datasets deposited on Zenodo associated with this project
+   are released under the Creative Commons Attribution 4.0 International
+   (CC BY 4.0) license and are governed by that license's terms, not this
+   license.
+
+5. ARTICLE LICENSE
+
+   The accompanying published article is distributed under the Creative
+   Commons Attribution-NonCommercial-NoDerivatives 4.0 International
+   (CC BY-NC-ND 4.0) license.
+
+6. COMMERCIAL LICENSING
+
+   For commercial licensing inquiries, please contact:
+
+   Sizun Jiang
+   sjiang3@bidmc.harvard.edu
+
+   Stephanie Pei Tung Yiu
+   syiu@bidmc.harvard.edu
+
+7. DISCLAIMER
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+   OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+   THE USE OR OTHER DEALINGS IN THE SOFTWARE.
